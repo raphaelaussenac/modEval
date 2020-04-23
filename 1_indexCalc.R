@@ -5,8 +5,12 @@
 # clean up environment
 rm(list = ls())
 
-# set work directory
-setwd("C:/Users/raphael.aussenac/Documents/GitHub/modEval/modelsOutput")
+# Choose the work directory = folder
+if (Sys.info()["sysname"] == "Darwin"){
+  setwd("/Users/raphaelaussenac/Documents/GitHub/modEval/modelsOutput")
+} else if (Sys.info()["sysname"] == "Windows"){
+  setwd("C:/Users/raphael.aussenac/Documents/GitHub/modEval/modelsOutput")
+}
 
 # retrieve list of file (simulations and observations)
 fileNames <- Sys.glob('*.csv')
@@ -37,8 +41,12 @@ for (i in fileNames){
   }
 
   # write site index
-  write.csv(df, file = paste('C:/Users/raphael.aussenac/Documents/GitHub/modEval/indexForEval/',
-                                  i, sep = ''), row.names = FALSE)
-
+  if (Sys.info()["sysname"] == "Darwin"){
+    write.csv(df, file = paste('/Users/raphaelaussenac/Documents/GitHub/modEval/indexForEval/',
+                                    i, sep = ''), row.names = FALSE)
+  } else if (Sys.info()["sysname"] == "Windows"){
+    write.csv(df, file = paste('C:/Users/raphael.aussenac/Documents/GitHub/modEval/indexForEval/',
+                                    i, sep = ''), row.names = FALSE)
+  }
 
 }

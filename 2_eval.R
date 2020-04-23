@@ -9,7 +9,12 @@ rm(list = ls())
 library(ggplot2)
 
 # set work directory
-setwd("C:/Users/raphael.aussenac/Documents/GitHub/modEval/indexForEval")
+# Choose the work directory = folder
+if (Sys.info()["sysname"] == "Darwin"){
+  setwd("/Users/raphaelaussenac/Documents/GitHub/modEval/indexForEval")
+} else if (Sys.info()["sysname"] == "Windows"){
+  setwd("C:/Users/raphael.aussenac/Documents/GitHub/modEval/indexForEval")
+}
 
 # load files
 fileNames <- Sys.glob('*.csv')
