@@ -35,10 +35,20 @@ for (i in fileNames){
     # mean quadratic diameter --------------------------------------------------
     yrdf$Dg <- sqrt(sum(yrdf$D^2)/nrow(yrdf))
 
+    # arithmetic mean height ---------------------------------------------------
+    yrdf$H <- sum(yrdf$H) / nrow(yrdf)
+
+    # basal area ---------------------------------------------------------------
+    yrdf$BA <- sum(pi * yrdf$D^2 / 4) / 10000 # convert in m2
+
     # save
-    yrdf <- yrdf[1, c('year', 'N', 'Dg')]
+    yrdf <- yrdf[1, c('year', 'N', 'Dg', 'H', 'BA')]
     df <- rbind(df, yrdf)
   }
+
+  # basal area increment -------------------------------------------------------
+  df$BAI <- c(NA, df$BA[-length(df$BA)])
+  df$BAI <- df$BA - df$BAI
 
   # write site index
   if (Sys.info()["sysname"] == "Darwin"){
