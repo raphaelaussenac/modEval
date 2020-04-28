@@ -39,6 +39,63 @@ for (src in listsrc){
 
 ################################################################################
 # calculate yearly aggregated index (N, Dg, etc) for observed and predicted data
+# at sp level
+################################################################################
+
+# sp N, Dg, H, BA
+sp <- ddply(alldf, .(year, src, site, species), summarise, N = length(D),
+                                                 Dg = sqrt(sum(D^2)/length(D)),
+                                                 H = sum(H) / length(H),
+                                                 BA = sum(pi * D^2 / 4) / 10000)
+#
+# sp BAI
+# first define lag function
+lg <- function(x)c(NA, x[1:(length(x)-1)])
+# convert sp into data.table format
+sp <- data.table(sp)
+# create lagged BA and year
+sp[,BAlag := lg(BA), by = c('src', 'site', 'species')]
+sp[,yearlag := lg(year), by = c('src', 'site', 'species')]
+
+
+# calculate mean BAI/yr on same period than in PROFOUND dataset
+# for all models
+# convert back to data.frame
+sp <- data.frame(sp)
+modelDf <- data.frame()
+for (mod in unique(alldf$src)[unique(alldf$src) != 'profound']){
+  for (site in unique(alldf$site)){
+    for (s in unique(alldf[alldf$site == site & alldf$src == mod, 'species'])){
+      # retrieve start year of each growth period
+      dfP <- sp[sp$src == 'profound' & sp$site == site & sp$species == s,]
+      df <- sp[sp$src == mod & sp$site == site & sp$species == s,]
+      df <- merge(df, dfP[, c('year', 'yearlag')], by = 'year', all.x = TRUE)
+      df$BAI_yr <- NA
+      #
+      for (end in df[!is.na(df$yearlag.y), 'year']){
+        # if start date exists in df
+        start <- df[df$year == end, 'yearlag.y']
+        if (start %in% df[!is.na(df$BA), 'year']){
+          df[df$year == end, 'BAI_yr'] <- (df[df$year == end, 'BA'] - df[df$year == start, 'BA']) / (end - start)
+        }
+      }
+      modelDf <- rbind(modelDf, df)
+    }
+  }
+}
+modelDf <- modelDf[, c('year', 'src', 'site', 'species', 'N', 'Dg', 'H', 'BA', 'BAI_yr')]
+
+# calculate mean BAI/yr on PROFOUND dataset
+profDf <- sp[sp$src == 'profound',]
+profDf$BAI_yr <- (profDf$BA - profDf$BAlag) / (profDf$year - profDf$yearlag)
+profDf <- profDf[, c('year', 'src', 'site', 'species', 'N', 'Dg', 'H', 'BA', 'BAI_yr')]
+
+# merge profound + models
+sp <- rbind(modelDf, profDf)
+
+
+################################################################################
+# calculate yearly aggregated index (N, Dg, etc) for observed and predicted data
 # at stand level
 ################################################################################
 
@@ -47,41 +104,19 @@ stand <- ddply(alldf, .(year, src, site), summarise, N = length(D),
                                                  Dg = sqrt(sum(D^2)/length(D)),
                                                  H = sum(H) / length(H),
                                                  BA = sum(pi * D^2 / 4) / 10000)
-# stand BAI
-# first define lag function
-lg <- function(x)c(NA, x[1:(length(x)-1)])
-# convert stand into data.table format
-stand <- data.table(stand)
-# create lagged variable
-stand[,BAI := lg(BA), by = c('src', 'site')]
-stand$BAI <- stand$BA - stand$BAI
 stand$species <- 'allsp'
-stand <- stand[, c('year', 'src', 'site', 'species', 'N', 'Dg', 'H', 'BA', 'BAI')]
+stand$paste <- paste(stand$year, stand$src, stand$site, sep = '')
 
-# write site index
-# if (Sys.info()["sysname"] == "Darwin"){
-#   write.csv(stand, file = paste('/Users/raphaelaussenac/Documents/GitHub/modEval/indexForEval/evalVar.csv', sep = ''), row.names = FALSE)
-# } else if (Sys.info()["sysname"] == "Windows"){
-#   write.csv(stand, file = paste('C:/Users/raphael.aussenac/Documents/GitHub/modEval/indexForEval/evalVar.csv', sep = ''), row.names = FALSE)
-# }
-
-################################################################################
-# calculate yearly aggregated index (N, Dg, etc) for observed and predicted data
-# at sp level
-################################################################################
-
-# stand N, Dg, H, BA
-sp <- ddply(alldf, .(year, src, site, species), summarise, N = length(D),
-                                                 Dg = sqrt(sum(D^2)/length(D)),
-                                                 H = sum(H) / length(H),
-                                                 BA = sum(pi * D^2 / 4) / 10000)
 # stand BAI
-# convert stand into data.table format
-sp <- data.table(sp)
-# create lagged variable
-sp[,BAI := lg(BA), by = c('src', 'site', 'species')]
-sp$BAI <- sp$BA - sp$BAI
-sp <- rbind(stand, sp)
+standBAI <- ddply(sp, .(year, src, site), summarise, BAI_yr = sum(BAI_yr))
+standBAI$paste <- paste(standBAI$year, standBAI$src, standBAI$site, sep = '')
+
+# merge stand and standBAI
+stand <- merge(stand, standBAI[, c('BAI_yr', 'paste')], by = 'paste')
+stand <- stand[, c('year', 'src', 'site', 'species', 'N', 'Dg', 'H', 'BA', 'BAI_yr')]
+
+# merge sp and stand
+sp <- rbind(sp, stand)
 
 # write site index
 if (Sys.info()["sysname"] == "Darwin"){
@@ -89,66 +124,3 @@ if (Sys.info()["sysname"] == "Darwin"){
 } else if (Sys.info()["sysname"] == "Windows"){
   write.csv(sp, file = paste('C:/Users/raphael.aussenac/Documents/GitHub/modEval/indexForEval/evalVarSp.csv', sep = ''), row.names = FALSE)
 }
-
-
-
-
-
-
-#
-# stand[stand$src == 'profound' & stand$site == "kroof",]
-#
-#
-#
-# # list of species
-# specieslist <- unique(alldf$species)
-#
-# #
-# for (src in listsrc){
-#   # at each site
-#   for (s in listsite){
-#     site <- alldf[alldf$src == src & alldf$site == s, ]
-#     # down to the year level
-#     df <- data.frame()
-#     for (yr in unique(site$year)){
-#       yrdf <- site[site$year == yr, ]
-#
-#       # Number of trees --------------------------------------------------------
-#       yrdf$N <- nrow(yrdf)
-#       # per sepcies at kroof site
-#       # if (s == 'kroof'){
-#       #   sp <- ddply(yrdf, .(species), summarise, Nsp = length(D))
-#       # }
-#
-#       # mean quadratic diameter ------------------------------------------------
-#       yrdf$Dg <- sqrt(sum(yrdf$D^2)/nrow(yrdf))
-#
-#       # arithmetic mean height -------------------------------------------------
-#       yrdf$H <- sum(yrdf$H) / nrow(yrdf)
-#
-#       # basal area -------------------------------------------------------------
-#       yrdf$BA <- sum(pi * yrdf$D^2 / 4) / 10000 # convert in m2
-#
-#       # save
-#       yrdf <- yrdf[1,]
-#       yrdf[, c('species', 'D')] <- NULL
-#
-#       # yrdf <- yrdf[1, c('year', 'N', 'Dg', 'H', 'BA')]
-#       df <- rbind(df, yrdf)
-#     }
-#
-#     # basal area increment -------------------------------------------------------
-#     df$BAI <- c(NA, df$BA[-length(df$BA)])
-#     df$BAI <- df$BA - df$BAI
-#
-#     # write site index
-#     if (Sys.info()["sysname"] == "Darwin"){
-#       write.csv(df, file = paste('/Users/raphaelaussenac/Documents/GitHub/modEval/indexForEval/',
-#                                       src, '_', s, '.csv', sep = ''), row.names = FALSE)
-#     } else if (Sys.info()["sysname"] == "Windows"){
-#       write.csv(df, file = paste('C:/Users/raphael.aussenac/Documents/GitHub/modEval/indexForEval/',
-#                                       src, '_', s, '.csv', sep = ''), row.names = FALSE)
-#     }
-#
-#   }
-# }

@@ -27,14 +27,14 @@ alldf <- alldf[order(alldf$src, alldf$site, alldf$species, alldf$year),]
 # Nobs and Npred must be multiplied by 2 ()
 alldf[alldf$site == 'kroof', 'N'] <- alldf[alldf$site == 'kroof', 'N'] * 2
 alldf[alldf$site == 'kroof', 'BA'] <- alldf[alldf$site == 'kroof', 'BA'] * 2
-alldf[alldf$site == 'kroof', 'BAI'] <- alldf[alldf$site == 'kroof', 'BAI'] * 2
+alldf[alldf$site == 'kroof', 'BAI_yr'] <- alldf[alldf$site == 'kroof', 'BAI_yr'] * 2
 
 ################################################################################
 # evaluation
 ################################################################################
 
 # list of evaluation variables
-evalVar <- c('N', 'Dg', 'H', 'BA', 'BAI')
+evalVar <- c('N', 'Dg', 'H', 'BA', 'BAI_yr')
 
 evaluation <- data.frame()
 # for each model
@@ -49,6 +49,7 @@ for (mod in unique(alldf$src)[unique(alldf$src) != 'profound']){
       obs[, c('src', 'site', 'species')] <- NULL
       pred <- alldf[alldf$src == mod & alldf$site == site & alldf$species == sp, ]
       colnames(pred)[!(colnames(pred) %in% c('year', 'src', 'site', 'species'))] <- paste('pred', colnames(pred)[!(colnames(pred) %in% c('year', 'src', 'site', 'species'))], sep = '')
+      # merge obs and pred
       df <- merge(obs, pred, by = 'year')
 
       # if species present
@@ -62,27 +63,34 @@ for (mod in unique(alldf$src)[unique(alldf$src) != 'profound']){
             evaldf <- df[, c('year', colnames(df)[colnames(df) == paste('obs', i, sep = '') | colnames(df) == paste('pred', i, sep = '')])]
             colnames(evaldf)[substr(colnames(evaldf), 1, 3) == 'obs'] <- 'Y'
             colnames(evaldf)[substr(colnames(evaldf), 1, 4) == 'pred'] <- 'X'
-            # remove NA values (for BAI and H)
-            if (i == 'BAI'){
+            # remove NA values (for BAI_yr)
+            if (i == 'BAI_yr'){
               evaldf <- evaldf[!is.na(evaldf$X), ]
               evaldf <- evaldf[!is.na(evaldf$Y), ]
             }
-            # calculate x, y and x*y, b and r²
-            evaldf$x <- evaldf$X - mean(evaldf$X)
-            evaldf$y <- evaldf$Y - mean(evaldf$Y)
-            evaldf$xy <-evaldf$x * evaldf$y
-            model <- lm(evaldf$Y ~ evaldf$X)
-            b <- as.numeric(coef(model)[2]) # = sum(evaldf$xy) / sum(evaldf$x^2)
-            r2 <- summary(model)$r.squared # = ( sum(evaldf$xy)^2 ) / ( sum(evaldf$x^2)*sum(evaldf$y^2) )
-            # calculate MSD and its 3 components
-            MSD <- sum( (evaldf$X - evaldf$Y) ^2) / nrow(evaldf)
-            SB <- (mean(evaldf$X) - mean(evaldf$Y))^2
-            NU <- ((1 - b)^2) * ( sum(evaldf$x^2) / nrow(evaldf) )
-            LC <- (1 - r2) * ( sum(evaldf$y^2) / nrow(evaldf) )
-            # save
-            deviancedf <- rbind(deviancedf, c(i, 'SB', SB))
-            deviancedf <- rbind(deviancedf, c(i, 'NU', NU))
-            deviancedf <- rbind(deviancedf, c(i, 'LC', LC))
+            # then if there is some data left
+            if (nrow(evaldf) > 0){
+              # calculate x, y and x*y, b and r²
+              evaldf$x <- evaldf$X - mean(evaldf$X)
+              evaldf$y <- evaldf$Y - mean(evaldf$Y)
+              evaldf$xy <-evaldf$x * evaldf$y
+              model <- lm(evaldf$Y ~ evaldf$X)
+              b <- as.numeric(coef(model)[2]) # = sum(evaldf$xy) / sum(evaldf$x^2)
+              r2 <- summary(model)$r.squared # = ( sum(evaldf$xy)^2 ) / ( sum(evaldf$x^2)*sum(evaldf$y^2) )
+              # calculate MSD and its 3 components
+              MSD <- sum( (evaldf$X - evaldf$Y) ^2) / nrow(evaldf)
+              SB <- (mean(evaldf$X) - mean(evaldf$Y))^2
+              NU <- ((1 - b)^2) * ( sum(evaldf$x^2) / nrow(evaldf) )
+              LC <- (1 - r2) * ( sum(evaldf$y^2) / nrow(evaldf) )
+              # save
+              deviancedf <- rbind(deviancedf, c(i, 'SB', SB))
+              deviancedf <- rbind(deviancedf, c(i, 'NU', NU))
+              deviancedf <- rbind(deviancedf, c(i, 'LC', LC))
+            } else {
+              deviancedf <- rbind(deviancedf, c(i, 'SB', NA))
+              deviancedf <- rbind(deviancedf, c(i, 'NU', NA))
+              deviancedf <- rbind(deviancedf, c(i, 'LC', NA))
+            }
           }
         }
         deviancedf$value <- as.numeric(deviancedf$value)
@@ -128,10 +136,11 @@ ts <- melt(stand, id.vars = c("year", "src", "site"))
 ts$site = factor(ts$site, levels = unique(alldf$site))
 ts$src = factor(ts$src, levels = unique(alldf$src))
 ts$variable = factor(ts$variable, levels = evalVar)
+ts$year <- as.numeric(ts$year)
 
 ggplot() +
-geom_line(data = ts[ts$src == 'profound',], aes(x = year, y = value, col = src)) +
-geom_line(data = ts[ts$src != 'profound',], aes(x = year, y = value, col = src), linetype = 'dashed') +
+geom_line(data = ts[ts$src == 'profound' & !is.na(ts$value),], aes(x = year, y = value, col = src)) +
+geom_path(data = ts[ts$src != 'profound'& !is.na(ts$value),], aes(x = year, y = value, col = src), linetype = 'dashed') +
 facet_grid(variable ~ site, scale = "free") +
 theme_light() +
 theme(panel.grid.minor = element_blank(),
@@ -172,8 +181,8 @@ ts$src = factor(ts$src, levels = unique(alldf$src))
 ts$variable = factor(ts$variable, levels = evalVar)
 
 ggplot() +
-geom_line(data = ts[ts$src == 'profound',], aes(x = year, y = value, col = src)) +
-geom_line(data = ts[ts$src != 'profound',], aes(x = year, y = value, col = src), linetype = 'dashed') +
+geom_line(data = ts[ts$src == 'profound' & !is.na(ts$value),], aes(x = year, y = value, col = src)) +
+geom_line(data = ts[ts$src != 'profound' & !is.na(ts$value),], aes(x = year, y = value, col = src), linetype = 'dashed') +
 facet_grid(variable ~ species, scale = "free") +
 theme_light() +
 theme(panel.grid.minor = element_blank(),
