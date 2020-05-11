@@ -21,7 +21,7 @@ fileNames <- Sys.glob('*.csv')
 
 # load data and assign model and site names to it
 listsrc <- c('profound', 'landclim', '4c')
-listsite <- c('kroof', 'solling_beech', 'solling_spruce')
+listsite <- c('kroof', 'solling-beech', 'solling-spruce')
 alldf <- data.frame()
 for (src in listsrc){
   for (i in grep(pattern = src, x = fileNames)){
@@ -43,10 +43,11 @@ for (src in listsrc){
 ################################################################################
 
 # sp N, Dg, H, BA
-sp <- ddply(alldf, .(year, src, site, species), summarise, N = length(D),
-                                                 Dg = sqrt(sum(D^2)/length(D)),
-                                                 H = sum(H) / length(H),
-                                                 BA = sum(pi * D^2 / 4) / 10000)
+sp <- ddply(alldf, .(year, src, site, species), summarise, N = length(D_cm),
+                                                 Dg = sqrt(sum(D_cm^2)/length(D_cm)),
+                                                 H = sum(H_m) / length(H_m),
+                                                 BA = sum(pi * D_cm^2 / 4) / 10000,
+                                                 V = sum(V_m3))
 #
 # sp BAI
 # first define lag function
@@ -83,12 +84,12 @@ for (mod in unique(alldf$src)[unique(alldf$src) != 'profound']){
     }
   }
 }
-modelDf <- modelDf[, c('year', 'src', 'site', 'species', 'N', 'Dg', 'H', 'BA', 'BAI_yr')]
+modelDf <- modelDf[, c('year', 'src', 'site', 'species', 'N', 'Dg', 'H', 'BA', 'V', 'BAI_yr')]
 
 # calculate mean BAI/yr on PROFOUND dataset
 profDf <- sp[sp$src == 'profound',]
 profDf$BAI_yr <- (profDf$BA - profDf$BAlag) / (profDf$year - profDf$yearlag)
-profDf <- profDf[, c('year', 'src', 'site', 'species', 'N', 'Dg', 'H', 'BA', 'BAI_yr')]
+profDf <- profDf[, c('year', 'src', 'site', 'species', 'N', 'Dg', 'H', 'BA', 'V', 'BAI_yr')]
 
 # merge profound + models
 sp <- rbind(modelDf, profDf)
@@ -100,10 +101,11 @@ sp <- rbind(modelDf, profDf)
 ################################################################################
 
 # stand N, Dg, H, BA
-stand <- ddply(alldf, .(year, src, site), summarise, N = length(D),
-                                                 Dg = sqrt(sum(D^2)/length(D)),
-                                                 H = sum(H) / length(H),
-                                                 BA = sum(pi * D^2 / 4) / 10000)
+stand <- ddply(alldf, .(year, src, site), summarise, N = length(D_cm),
+                                                 Dg = sqrt(sum(D_cm^2)/length(D_cm)),
+                                                 H = sum(H_m) / length(H_m),
+                                                 BA = sum(pi * D_cm^2 / 4) / 10000,
+                                                 V = sum(V_m3))
 stand$species <- 'allsp'
 stand$paste <- paste(stand$year, stand$src, stand$site, sep = '')
 
@@ -113,7 +115,7 @@ standBAI$paste <- paste(standBAI$year, standBAI$src, standBAI$site, sep = '')
 
 # merge stand and standBAI
 stand <- merge(stand, standBAI[, c('BAI_yr', 'paste')], by = 'paste')
-stand <- stand[, c('year', 'src', 'site', 'species', 'N', 'Dg', 'H', 'BA', 'BAI_yr')]
+stand <- stand[, c('year', 'src', 'site', 'species', 'N', 'Dg', 'H', 'BA', 'V', 'BAI_yr')]
 
 # merge sp and stand
 sp <- rbind(sp, stand)

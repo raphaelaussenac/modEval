@@ -20,21 +20,12 @@ if (Sys.info()["sysname"] == "Darwin"){
 alldf <- read.csv('evalVarSp.csv')
 alldf <- alldf[order(alldf$src, alldf$site, alldf$species, alldf$year),]
 
-# manage different plot scales
-# kroof is 0.5ha while other sites are 1ha
-# N is therefore lower at kroof which could make MSD lower too
-# to make it possible to compare deviance among sites
-# Nobs and Npred must be multiplied by 2 ()
-alldf[alldf$site == 'kroof', 'N'] <- alldf[alldf$site == 'kroof', 'N'] * 2
-alldf[alldf$site == 'kroof', 'BA'] <- alldf[alldf$site == 'kroof', 'BA'] * 2
-alldf[alldf$site == 'kroof', 'BAI_yr'] <- alldf[alldf$site == 'kroof', 'BAI_yr'] * 2
-
 ################################################################################
 # evaluation
 ################################################################################
 
 # list of evaluation variables
-evalVar <- c('N', 'Dg', 'H', 'BA', 'BAI_yr')
+evalVar <- c('N', 'Dg', 'H', 'BA', 'V','BAI_yr')
 
 evaluation <- data.frame()
 # for each model
@@ -57,39 +48,42 @@ for (mod in unique(alldf$src)[unique(alldf$src) != 'profound']){
         # for each index to compare
         deviancedf <- data.frame('variable'= NA, 'devMeasure'= NA, 'value' = NA)
         for (i in evalVar){
-          # no evaluation of H at kroof site
-          if (i != 'H' | site != 'kroof'){
-            # create evaluation df
-            evaldf <- df[, c('year', colnames(df)[colnames(df) == paste('obs', i, sep = '') | colnames(df) == paste('pred', i, sep = '')])]
-            colnames(evaldf)[substr(colnames(evaldf), 1, 3) == 'obs'] <- 'Y'
-            colnames(evaldf)[substr(colnames(evaldf), 1, 4) == 'pred'] <- 'X'
-            # remove NA values (for BAI_yr)
-            if (i == 'BAI_yr'){
-              evaldf <- evaldf[!is.na(evaldf$X), ]
-              evaldf <- evaldf[!is.na(evaldf$Y), ]
-            }
-            # then if there is some data left
-            if (nrow(evaldf) > 0){
-              # calculate x, y and x*y, b and r²
-              evaldf$x <- evaldf$X - mean(evaldf$X)
-              evaldf$y <- evaldf$Y - mean(evaldf$Y)
-              evaldf$xy <-evaldf$x * evaldf$y
-              model <- lm(evaldf$Y ~ evaldf$X)
-              b <- as.numeric(coef(model)[2]) # = sum(evaldf$xy) / sum(evaldf$x^2)
-              r2 <- summary(model)$r.squared # = ( sum(evaldf$xy)^2 ) / ( sum(evaldf$x^2)*sum(evaldf$y^2) )
-              # calculate MSD and its 3 components
-              MSD <- sum( (evaldf$X - evaldf$Y) ^2) / nrow(evaldf)
-              SB <- (mean(evaldf$X) - mean(evaldf$Y))^2
-              NU <- ((1 - b)^2) * ( sum(evaldf$x^2) / nrow(evaldf) )
-              LC <- (1 - r2) * ( sum(evaldf$y^2) / nrow(evaldf) )
-              # save
-              deviancedf <- rbind(deviancedf, c(i, 'SB', SB))
-              deviancedf <- rbind(deviancedf, c(i, 'NU', NU))
-              deviancedf <- rbind(deviancedf, c(i, 'LC', LC))
-            } else {
-              deviancedf <- rbind(deviancedf, c(i, 'SB', NA))
-              deviancedf <- rbind(deviancedf, c(i, 'NU', NA))
-              deviancedf <- rbind(deviancedf, c(i, 'LC', NA))
+          # no evaluation of Volume
+          if (i != 'V'){
+            # no evaluation of H at kroof site
+            if (i != 'H' | site != 'kroof'){
+              # create evaluation df
+              evaldf <- df[, c('year', colnames(df)[colnames(df) == paste('obs', i, sep = '') | colnames(df) == paste('pred', i, sep = '')])]
+              colnames(evaldf)[substr(colnames(evaldf), 1, 3) == 'obs'] <- 'Y'
+              colnames(evaldf)[substr(colnames(evaldf), 1, 4) == 'pred'] <- 'X'
+              # remove NA values (for BAI_yr)
+              if (i == 'BAI_yr'){
+                evaldf <- evaldf[!is.na(evaldf$X), ]
+                evaldf <- evaldf[!is.na(evaldf$Y), ]
+              }
+              # then if there is some data left
+              if (nrow(evaldf) > 0){
+                # calculate x, y and x*y, b and r²
+                evaldf$x <- evaldf$X - mean(evaldf$X)
+                evaldf$y <- evaldf$Y - mean(evaldf$Y)
+                evaldf$xy <-evaldf$x * evaldf$y
+                model <- lm(evaldf$Y ~ evaldf$X)
+                b <- as.numeric(coef(model)[2]) # = sum(evaldf$xy) / sum(evaldf$x^2)
+                r2 <- summary(model)$r.squared # = ( sum(evaldf$xy)^2 ) / ( sum(evaldf$x^2)*sum(evaldf$y^2) )
+                # calculate MSD and its 3 components
+                MSD <- sum( (evaldf$X - evaldf$Y) ^2) / nrow(evaldf)
+                SB <- (mean(evaldf$X) - mean(evaldf$Y))^2
+                NU <- ((1 - b)^2) * ( sum(evaldf$x^2) / nrow(evaldf) )
+                LC <- (1 - r2) * ( sum(evaldf$y^2) / nrow(evaldf) )
+                # save
+                deviancedf <- rbind(deviancedf, c(i, 'SB', SB))
+                deviancedf <- rbind(deviancedf, c(i, 'NU', NU))
+                deviancedf <- rbind(deviancedf, c(i, 'LC', LC))
+              } else {
+                deviancedf <- rbind(deviancedf, c(i, 'SB', NA))
+                deviancedf <- rbind(deviancedf, c(i, 'NU', NA))
+                deviancedf <- rbind(deviancedf, c(i, 'LC', NA))
+              }
             }
           }
         }
