@@ -25,7 +25,8 @@ alldf <- alldf[order(alldf$src, alldf$site, alldf$species, alldf$year),]
 ################################################################################
 
 # list of evaluation variables
-evalVar <- c('N', 'Dg', 'H', 'BA', 'V','BAI_yr')
+alldf$V <- NULL
+evalVar <- c('N', 'Dg', 'H', 'BA','BAI_yr', 'Sh', 'GS', 'Simp')
 
 evaluation <- data.frame()
 # for each model
@@ -120,7 +121,7 @@ theme(panel.grid.minor = element_blank(),
       legend.position = "bottom",
       legend.title=element_blank(),
       panel.spacing = unit(20, 'pt'))
-ggsave(paste('eval.jpg', sep = '_'), width = 8, height = 8)
+ggsave(paste('eval.jpg', sep = '_'), width = 8, height = 12)
 
 
 # time series
@@ -144,7 +145,7 @@ theme(panel.grid.minor = element_blank(),
       legend.position = "bottom",
       legend.title=element_blank(),
       panel.spacing = unit(20, 'pt'))
-ggsave(paste('ts.jpg', sep = '_'), width = 8, height = 8)
+ggsave(paste('ts.jpg', sep = '_'), width = 8, height = 12)
 
 
 ################################################################################
@@ -152,7 +153,8 @@ ggsave(paste('ts.jpg', sep = '_'), width = 8, height = 8)
 ################################################################################
 
 # evaluation
-sp <- evaluation[evaluation$site == 'kroof' & evaluation$sp != "allsp",]
+spLevelVariable <- c('N', 'Dg', 'BA', 'BAI_yr')
+sp <- evaluation[evaluation$site == 'kroof' & evaluation$sp != "allsp" & evaluation$variable %in% spLevelVariable,]
 ggplot(data = sp, aes(x = mod, y = value, fill = devMeasure)) +
 geom_bar(stat = "identity") +
 facet_grid(variable ~ species, scale = "free") +
@@ -173,6 +175,7 @@ ts <- melt(sp, id.vars = c("year", "src", 'site', "species"))
 ts$site = factor(ts$site, levels = unique(alldf$site))
 ts$src = factor(ts$src, levels = unique(alldf$src))
 ts$variable = factor(ts$variable, levels = evalVar)
+ts <- ts[ts$variable %in% spLevelVariable,]
 
 ggplot() +
 geom_line(data = ts[ts$src == 'profound' & !is.na(ts$value),], aes(x = year, y = value, col = src)) +

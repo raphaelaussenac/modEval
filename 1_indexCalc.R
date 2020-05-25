@@ -11,16 +11,16 @@ library(data.table)
 
 # Choose the work directory = folder
 if (Sys.info()["sysname"] == "Darwin"){
-  setwd("/Users/raphaelaussenac/Documents/GitHub/modEval/modelsOutput")
+  setwd("/Users/raphaelaussenac/Documents/GitHub/modEval")
 } else if (Sys.info()["sysname"] == "Windows"){
-  setwd("C:/Users/raphael.aussenac/Documents/GitHub/modEval/modelsOutput")
+  setwd("C:/Users/raphael.aussenac/Documents/GitHub/modEval")
 }
 
 # retrieve list of file (simulations and observations)
-fileNames <- Sys.glob('*.csv')
+fileNames <- Sys.glob('./modelsOutput/*.csv')
 
 # load data and assign model and site names to it
-listsrc <- c('profound', 'landclim', '4c')
+listsrc <- c('profound', 'landclim', '4c', 'Salem')
 listsite <- c('kroof', 'solling-beech', 'solling-spruce')
 alldf <- data.frame()
 for (src in listsrc){
@@ -35,7 +35,6 @@ for (src in listsrc){
     alldf <- rbind(alldf, temp)
   }
 }
-
 
 ################################################################################
 # calculate yearly aggregated index (N, Dg, etc) for observed and predicted data
@@ -119,6 +118,28 @@ stand <- stand[, c('year', 'src', 'site', 'species', 'N', 'Dg', 'H', 'BA', 'V', 
 
 # merge sp and stand
 sp <- rbind(sp, stand)
+
+################################################################################
+# calculate heterogeneity index at stand level
+################################################################################
+
+# Import functions to calculate heterogeneity index
+if (Sys.info()["sysname"] == "Darwin"){
+  source("/Users/raphaelaussenac/Documents/GitHub/modEval/R/HetIndex.R")
+} else if (Sys.info()["sysname"] == "Windows"){
+  source("C:/Users/raphael.aussenac/Documents/GitHub/modEval/R/HetIndex.R")
+}
+
+Nvar <- "D_cm"
+Inter <- 10
+model <- c('profound', '4c', 'landclim', 'Salem')
+site <- c('kroof','solling-spruce', 'solling-beech')
+out <- ReturnHill(Nvar, model, site, Inter)
+out <- data.frame(out)
+out[, c('N', 'Inter', 'Nvar')] <- NULL
+
+# add heterogeneity index to df
+sp <- merge(sp, out, by.x= c('year', 'src', 'site'), by.y = c('year', 'model', 'site'))
 
 # write site index
 if (Sys.info()["sysname"] == "Darwin"){
