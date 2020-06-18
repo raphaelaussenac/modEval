@@ -8,6 +8,9 @@ rm(list = ls())
 # load packages
 library(ggplot2)
 library(reshape2)
+library(tidyr)
+library(fmsb)
+library(plyr)
 
 # set work directory
 # Choose the work directory = folder
@@ -77,10 +80,12 @@ for (mod in unique(alldf$src)[unique(alldf$src) != 'profound']){
                 NU <- ((1 - b)^2) * ( sum(evaldf$x^2) / nrow(evaldf) )
                 LC <- (1 - r2) * ( sum(evaldf$y^2) / nrow(evaldf) )
                 # save
+                deviancedf <- rbind(deviancedf, c(i, 'MSD', MSD))
                 deviancedf <- rbind(deviancedf, c(i, 'SB', SB))
                 deviancedf <- rbind(deviancedf, c(i, 'NU', NU))
                 deviancedf <- rbind(deviancedf, c(i, 'LC', LC))
               } else {
+                deviancedf <- rbind(deviancedf, c(i, 'MSD', NA))
                 deviancedf <- rbind(deviancedf, c(i, 'SB', NA))
                 deviancedf <- rbind(deviancedf, c(i, 'NU', NA))
                 deviancedf <- rbind(deviancedf, c(i, 'LC', NA))
@@ -100,6 +105,8 @@ for (mod in unique(alldf$src)[unique(alldf$src) != 'profound']){
   }
 }
 
+evaluationMSD <- evaluation[evaluation$devMeasure == "MSD",]
+evaluation <- evaluation[evaluation$devMeasure != "MSD",]
 
 ################################################################################
 # evaluation and time series at stand level
@@ -190,3 +197,54 @@ theme(panel.grid.minor = element_blank(),
       legend.title=element_blank(),
       panel.spacing = unit(20, 'pt'))
 ggsave(paste('tsSpKroof.jpg', sep = '_'), width = 8, height = 8)
+
+
+################################################################################
+# radarchart relative MSD at stand level
+################################################################################
+
+# calculate max MSD for each variable at each site
+evaluationMSD <- evaluationMSD[evaluationMSD$species == 'allsp',]
+maxMSD <- ddply(evaluationMSD, .(site, variable), summarise, maxMSD = max(value))
+
+# calculate relative MSD
+relativeMSD <- merge(evaluationMSD, maxMSD, by = c('site', 'variable'))
+relativeMSD$relMSD <- relativeMSD$value / relativeMSD$maxMSD
+
+# long to wide for radarchart function
+relativeMSD[, c('devMeasure', 'value' , 'species', 'maxMSD')] <- NULL
+relativeMSD <- spread(relativeMSD, variable, relMSD)
+
+# radarchart
+par(mfrow = c(1,3))
+# color vector
+colors_border=c( rgb(0.2,0.5,0.5,0.9), rgb(0.8,0.2,0.5,0.9) , rgb(0.7,0.5,0.1,0.9) )
+colors_in=c( rgb(0.2,0.5,0.5,0.4), rgb(0.8,0.2,0.5,0.4) , rgb(0.7,0.5,0.1,0.4) )
+
+for (i in unique(relativeMSD$site)){
+  df <- relativeMSD[relativeMSD$site == i, ]
+  rownames(df) <- df$mod
+  df[, c('site', 'mod')] <- NULL
+  df <- rbind(rep(1,ncol(df)) , rep(0,ncol(df)) , df)
+  df <- round(df, 2)
+  # remove columns with NA (ex: H at kroof site)
+  df <- df[colSums(!is.na(df)) == nrow(df)]
+
+  # plot with default options:
+  radarchart(df  , axistype=1 ,
+      #custom polygon
+      pcol=colors_border , pfcol=colors_in , plwd=4 , plty=1,
+      #custom the grid
+      cglcol="grey", cglty=1, axislabcol="black", cglwd=0.8, seg = 5, caxislabels = seq(0,1,0.2),
+      # title
+      title = i,
+      #custom labels
+      vlcex=0.8
+      )
+
+}
+
+# Add a legend
+legend(x=0.9, y=-1, legend = rownames(df[-c(1,2),]), bty = "n", pch=20 , col=colors_in , text.col = "black", cex=1.2, pt.cex=3)
+
+dev.copy2pdf(file = paste0('radar.pdf'), width = 20, height = 8)
