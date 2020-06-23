@@ -11,6 +11,7 @@ library(reshape2)
 library(tidyr)
 library(fmsb)
 library(plyr)
+library(viridis)
 
 # set work directory
 # Choose the work directory = folder
@@ -218,8 +219,10 @@ relativeMSD <- spread(relativeMSD, variable, relMSD)
 # radarchart
 par(mfrow = c(1,3))
 # color vector
-colors_border=c( rgb(0.2,0.5,0.5,0.9), rgb(0.8,0.2,0.5,0.9) , rgb(0.7,0.5,0.1,0.9) )
-colors_in=c( rgb(0.2,0.5,0.5,0.4), rgb(0.8,0.2,0.5,0.4) , rgb(0.7,0.5,0.1,0.4) )
+# colors_border=c( rgb(0.2,0.5,0.5,0.9), rgb(0.8,0.2,0.5,0.9) , rgb(0.7,0.5,0.1,0.9) )
+# colors_in=c( rgb(0.2,0.5,0.5,0.4), rgb(0.8,0.2,0.5,0.4) , rgb(0.7,0.5,0.1,0.4) )
+colors_border = viridis_pal(alpha = 1, option = 'viridis')(100)[c(1, 50, 100)]
+colors_in = viridis_pal(alpha = 0.5, option = 'viridis')(100)[c(1, 50, 100)]
 
 for (i in unique(relativeMSD$site)){
   df <- relativeMSD[relativeMSD$site == i, ]
@@ -231,20 +234,22 @@ for (i in unique(relativeMSD$site)){
   df <- df[colSums(!is.na(df)) == nrow(df)]
 
   # plot with default options:
-  radarchart(df  , axistype=1 ,
-      #custom polygon
-      pcol=colors_border , pfcol=colors_in , plwd=4 , plty=1,
-      #custom the grid
-      cglcol="grey", cglty=1, axislabcol="black", cglwd=0.8, seg = 5, caxislabels = seq(0,1,0.2),
+  radarchart(df , axistype=1,
+      # custom polygon
+      pcol = colors_border, pfcol = colors_in, plwd = 1, plty = 1,
       # title
       title = i,
-      #custom labels
-      vlcex=0.8
+      # custom labels
+      vlcex = 1.6,
+      # custom the grid
+      cglcol = "grey", cglty = 1, axislabcol = "black", cglwd = 1, seg = 5, caxislabels = seq(0,1,0.2), calcex = 1.5,
+      # center
+      centerzero = FALSE
       )
 
 }
 
 # Add a legend
-legend(x=0.9, y=-1, legend = rownames(df[-c(1,2),]), bty = "n", pch=20 , col=colors_in , text.col = "black", cex=1.2, pt.cex=3)
+legend(x=0.55, y=-1, legend = rownames(df[-c(1,2),]), bty = "n", pch=20 , col=colors_in , text.col = "black", cex=1.2, pt.cex=3)
 
-dev.copy2pdf(file = paste0('radar.pdf'), width = 20, height = 8)
+dev.copy2pdf(file = paste0('radar.pdf'), width = 13, height = 5)
