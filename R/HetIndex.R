@@ -24,10 +24,13 @@ CalcHill <- function(dataSet){
     return(HillNB)
 }
 
-ReturnHill <- function(Nvar='D_cm', model='4c', site='kroof', Inter=10, path='./modelsOutput'){
+ReturnHill <- function(Nvar='D_cm', model='4c', site='kroof', Inter=10, path='.'){
 	# model and site can be list, Nvar cannot
     listfiles <- intersect(list.files(path=path, pattern=paste(model,collapse='|')),
         list.files(path=path, pattern=paste(site,collapse='|')))
+        if (length(listfiles) == 0){
+          stop('no files found in directory')
+        }
     Hill <- NULL
     for (ifile in listfiles){
          dataTemp <- read.csv(file=paste(path,ifile,sep=.Platform$file.sep))

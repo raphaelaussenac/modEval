@@ -1,3 +1,4 @@
-*.jpg
-indexForEval
 .Rapp.history
+plotEval
+allProfound.csv
+evalVarSp.csv
