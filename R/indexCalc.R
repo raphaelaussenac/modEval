@@ -11,12 +11,11 @@ alldf <- read.csv(paste0('./data/all_', evalSite, '.csv'))
 ################################################################################
 
 # sp N, Dg, H, BA
-
-sp <- ddply(alldf, .(year, src, site, species), summarise, N = length(D_cm),
-                                                 Dg = sqrt(sum(D_cm^2)/length(D_cm)),
-                                                 H = sum(H_m) / length(H_m),
-                                                 BA = sum(pi * D_cm^2 / 4) / 10000,
-                                                 V = sum(V_m3))
+sp <- ddply(alldf, .(year, src, site, species), summarise, N = sum(weight),
+                                                 Dg = sqrt(sum(D_cm^2 * weight)/sum(weight)),
+                                                 H = sum(H_m * weight) /sum(weight),
+                                                 BA = sum((pi * D_cm^2 / 4) * weight) / 10000,
+                                                 V = sum(V_m3 * weight))
 #
 # sp BAI
 # first define lag function
@@ -70,12 +69,11 @@ sp <- rbind(modelDf, profDf)
 ################################################################################
 
 # stand N, Dg, H, BA
-
-stand <- ddply(alldf, .(year, src, site), summarise, N = length(D_cm),
-                                                 Dg = sqrt(sum(D_cm^2)/length(D_cm)),
-                                                 H = sum(H_m) / length(H_m),
-                                                 BA = sum(pi * D_cm^2 / 4) / 10000,
-                                                 V = sum(V_m3))
+stand <- ddply(alldf, .(year, src, site), summarise, N = sum(weight),
+                                                 Dg = sqrt(sum(D_cm^2 * weight)/sum(weight)),
+                                                 H = sum(H_m * weight) /sum(weight),
+                                                 BA = sum((pi * D_cm^2 / 4) * weight) / 10000,
+                                                 V = sum(V_m3 * weight))
 #
 stand$species <- 'allsp'
 stand$paste <- paste(stand$year, stand$src, stand$site, sep = '')
@@ -96,17 +94,13 @@ sp <- rbind(sp, stand)
 ################################################################################
 
 # Import functions to calculate heterogeneity index
-if (Sys.info()["sysname"] == "Darwin"){
-  source("./R/HetIndex.R")
-} else if (Sys.info()["sysname"] == "Windows"){
-  source("./R/HetIndex.R")
-}
+source("./R/HetIndex.R")
 
 Nvar <- "D_cm"
 Inter <- 10
 model <- c('data', '4c', 'landclim', 'Salem')
 site <- c('kroof','solling-spruce', 'solling-beech')
-out <- ReturnHill(Nvar, model, site, Inter, path = './data/obsAndSim/profound')
+out <- ReturnHill(Nvar, model, site, Inter, path = paste0('./data/obsAndSim/', evalSite))
 out <- data.frame(out)
 out[, c('N', 'Inter', 'Nvar')] <- NULL
 

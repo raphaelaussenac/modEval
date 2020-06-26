@@ -1,4 +1,4 @@
 .Rapp.history
 *.pdf
-allProfound.csv
-evalVarSp.csv
+all_*
+eval_*
