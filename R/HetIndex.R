@@ -24,12 +24,12 @@ CalcHill <- function(dataSet){
     return(HillNB)
 }
 
-ReturnHill <- function(evalSite, Nvar='D_cm', Inter=10, path='.'){
-    if (!file.exists(paste0('data/all_',evalSite,'.csv'))){stop('Need to build dataset first')}
-    dataTemp <- read.csv(file=paste0('data/all_',evalSite,'.csv'))
+ReturnHill <- function(evalSite, Nvar='D_cm', Inter=10, path='data'){
+    if (!file.exists(paste0(path,'/','all_',evalSite,'.csv'))){stop('Need to build dataset first')}
+    dataTemp <- read.csv(file=paste0(path,'/','all_',evalSite,'.csv'))
     dataTemp <- ChooseVar(dataTemp, Nvar=Nvar, Inter=Inter)
     Hill <- CalcHill(dataTemp)
-    return(Hill)
+    return(as.data.frame(Hill))
 }
 
 Example <- function(){
