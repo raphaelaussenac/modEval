@@ -2,7 +2,6 @@
 library(plyr)
 library(data.table)
 
-
 WriteIndex <- function(evalSite){
 # load data
   alldf <- read.csv(paste0('./data/all_', evalSite, '.csv'))
@@ -13,11 +12,12 @@ WriteIndex <- function(evalSite){
 ################################################################################
 
 # sp N, Dg, H, BA
-  sp <- ddply(alldf, .(year, src, site, species), summarise, N = sum(weight),
+ sp <- ddply(alldf, .(year, src, site, species), summarise, N = sum(weight),
                                                  Dg = sqrt(sum(D_cm^2 * weight)/sum(weight)),
                                                  H = sum(H_m * weight) /sum(weight),
                                                  BA = sum((pi * D_cm^2 / 4) * weight) / 10000,
                                                  V = sum(V_m3 * weight))
+
 #
 # sp BAI
 # first define lag function
@@ -63,7 +63,6 @@ WriteIndex <- function(evalSite){
 # merge profound + models
   sp <- rbind(modelDf, profDf)
 
-
 ################################################################################
 # calculate yearly aggregated index (N, Dg, etc) for observed and predicted data
 # at stand level
@@ -96,14 +95,12 @@ WriteIndex <- function(evalSite){
 
   Nvar <- "D_cm"
   Inter <- 10
-  model <- c('data', '4c', 'landclim', 'Salem')
-  site <- c('kroof','solling-spruce', 'solling-beech')
-  out <- ReturnHill(Nvar, model, site, Inter, path = paste0('./data/obsAndSim/', evalSite))
+  out <- ReturnHill(evalSite, Nvar, Inter)
   out <- data.frame(out)
   out[, c('N', 'Inter', 'Nvar')] <- NULL
 
 # add heterogeneity index to df
-  sp <- merge(sp, out, by.x= c('year', 'src', 'site'), by.y = c('year', 'model', 'site'))
+  sp <- merge(sp, out, by= c('year', 'src', 'site'))
 
 # write site index
   write.csv(sp, paste0('./data/eval_', evalSite, '.csv'), row.names = FALSE)
