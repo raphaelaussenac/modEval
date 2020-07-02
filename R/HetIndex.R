@@ -18,10 +18,10 @@ CalcDivIndex <- function(dataSet){
 # dataSet after ChooseVar, return GS : Gini-Simpson, Sh : Shannon, N : Nb for each year
     if (is.null(dataSet[["Var"]])){stop('Need to choose variable first')}
     PClass <- group_by(dataSet, year, site, src) %>% mutate(N = sum(weight)) %>% ungroup() %>%
-	    group_by(year, Class, site, src) %>% summarise(p=(sum(weight)/N[1])) %>% ungroup()
-    HillNB <- group_by(PClass, year, site, src) %>% summarise(Sh=-sum(p * log(p)),
+	    group_by(year, Class, site, src) %>% dplyr::summarise(p=(sum(weight)/N[1])) %>% ungroup()
+    HillNB <- group_by(PClass, year, site, src) %>% dplyr::summarise(Sh=-sum(p * log(p)),
 	    N=n(), GS=1-sum(p^2), Simp=sum(p^2)) %>% ungroup()
-    GiniIndex <- group_by(dataSet, year, site, src) %>% summarise(GI=Gini(Class, weight)) %>% ungroup()
+    GiniIndex <- group_by(dataSet, year, site, src) %>% dplyr::summarise(GI=Gini(Class, weight)) %>% ungroup()
     DivIndex <- left_join(HillNB, GiniIndex, by=c('year','site','src'))
     return(DivIndex)
 }
