@@ -95,7 +95,7 @@ WriteIndex <- function(evalSite){
 
   Nvar <- "D_cm"
   Inter <- 10
-  out <- ReturnHill(evalSite, Nvar, Inter)
+  out <- ReturnDivIndex(evalSite, Nvar, Inter)
   out <- data.frame(out)
   out[, c('N', 'Inter', 'Nvar')] <- NULL
 
