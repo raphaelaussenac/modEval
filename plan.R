@@ -3,7 +3,7 @@ library(ggplot2)
 library(reshape2)
 library(tidyr)
 library(fmsb)
-library(plyr)
+#library(plyr)
 library(viridis)
 
 if (Sys.info()["sysname"] == "Darwin"){
