@@ -14,22 +14,36 @@ ChooseVar <- function(dataSet, Nvar = "D_cm", Inter = 10){
     return(dataSet)
 }
 
-CalcHill <- function(dataSet){
+CalcDivIndex <- function(dataSet){
 # dataSet after ChooseVar, return GS : Gini-Simpson, Sh : Shannon, N : Nb for each year
     if (is.null(dataSet[["Var"]])){stop('Need to choose variable first')}
     PClass <- group_by(dataSet, year, site, src) %>% mutate(N = sum(weight)) %>% ungroup() %>%
 	    group_by(year, Class, site, src) %>% summarise(p=(sum(weight)/N[1])) %>% ungroup()
     HillNB <- group_by(PClass, year, site, src) %>% summarise(Sh=-sum(p * log(p)),
 	    N=n(), GS=1-sum(p^2), Simp=sum(p^2)) %>% ungroup()
-    return(HillNB)
+    GiniIndex <- group_by(dataSet, year, site, src) %>% summarise(GI=Gini(Class, weight)) %>% ungroup()
+    DivIndex <- left_join(HillNB, GiniIndex, by=c('year','site','src'))
+    return(DivIndex)
 }
 
-ReturnHill <- function(evalSite, Nvar='D_cm', Inter=10, path='data'){
+ReturnDivIndex <- function(evalSite, Nvar='D_cm', Inter=10, path='data'){
     if (!file.exists(paste0(path,'/','all_',evalSite,'.csv'))){stop('Need to build dataset first')}
     dataTemp <- read.csv(file=paste0(path,'/','all_',evalSite,'.csv'))
     dataTemp <- ChooseVar(dataTemp, Nvar=Nvar, Inter=Inter)
-    Hill <- CalcHill(dataTemp)
-    return(as.data.frame(Hill))
+    DivIndex <- CalcDivIndex(dataTemp)
+    return(as.data.frame(DivIndex))
+}
+
+
+Gini <- function (x, weights = rep(1, length = length(x))){
+    ox <- order(x)
+    x <- x[ox]
+    weights <- weights[ox]/sum(weights)
+    p <- cumsum(weights)
+    nu <- cumsum(weights * x)
+    n <- length(nu)
+    nu <- nu/nu[n]
+    sum(nu[-1] * p[-n]) - sum(nu[-n] * p[-1])
 }
 
 Example <- function(){
