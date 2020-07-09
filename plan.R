@@ -22,5 +22,3 @@ plan <- drake_plan(
     IsFiguresProfound = WritePlot('profound')
 
 )
-
-                                                                     
