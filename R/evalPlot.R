@@ -16,7 +16,7 @@ WritePlot <- function(evalSite){
 
 # list of evaluation variables
   alldf$V <- NULL
-  evalVar <- c('N', 'Dg', 'H', 'BA','BAI_yr', 'Sh', 'GS', 'Simp')
+  evalVar <- c('N', 'Dg', 'H', 'BA','BAI_yr', 'Sh', 'GS', 'Simp', 'GI')
 
   evaluation <- data.frame()
 # for each model
@@ -105,7 +105,7 @@ WritePlot <- function(evalSite){
   evaluation$site = factor(evaluation$site, levels = unique(alldf$site))
   evaluation$mod = factor(evaluation$mod, levels = unique(alldf$src))
   evaluation$variable = factor(evaluation$variable, levels = evalVar)
- 
+
   pl <- ggplot(data = evaluation[evaluation$species == 'allsp',], aes(x = mod, y = value, fill = devMeasure)) +
     geom_bar(stat = "identity") +
     facet_grid(variable ~ site, scale = "free") +
