@@ -39,6 +39,13 @@ WriteIndex <- function(evalSite){
       for (s in unique(alldf[alldf$site == site & alldf$src == mod, 'species'])){
         # retrieve start year of each growth period
         dfP <- sp[sp$src == 'data' & sp$site == site & sp$species == s,]
+        # when sp is not prensent in data (because of sp substitution)
+        # use another species present in the data (only serves to retrieve
+        # the starting year of each growth period)
+        if (nrow(dfP) == 0 & evalSite == 'bauges'){
+          otherSp <- sp[sp$src == 'data' & sp$site == site, 'species'][1]
+          dfP <- sp[sp$src == 'data' & sp$site == site & sp$species == otherSp,]
+        }
         df <- sp[sp$src == mod & sp$site == site & sp$species == s,]
         df <- merge(df, dfP[, c('year', 'yearlag')], by = 'year', all.x = TRUE)
         df$BAI_yr <- NA
@@ -46,7 +53,11 @@ WriteIndex <- function(evalSite){
           # if start date exists in df
           start <- df[df$year == end, 'yearlag.y']
           if (start %in% df[!is.na(df$BA), 'year']){
-            df[df$year == end, 'BAI_yr'] <- (df[df$year == end, 'BA'] - df[df$year == start, 'BA']) / (end - start)
+            if (evalSite == 'profound'){
+              df[df$year == end, 'BAI_yr'] <- (df[df$year == end, 'BA'] - df[df$year == start, 'BA']) / (end - start)
+            } else if (evalSite == 'bauges'){ # growth period + 1 for the bauges data set
+              df[df$year == end, 'BAI_yr'] <- (df[df$year == end, 'BA'] - df[df$year == start, 'BA']) / ((end - start) + 1)
+            }
           }
         }
         modelDf <- rbind(modelDf, df)
@@ -55,13 +66,17 @@ WriteIndex <- function(evalSite){
   }
   modelDf <- modelDf[, c('year', 'src', 'site', 'species', 'N', 'Dg', 'H', 'BA', 'V', 'BAI_yr')]
 
-# calculate mean BAI/yr on PROFOUND dataset
-  profDf <- sp[sp$src == 'data',]
-  profDf$BAI_yr <- (profDf$BA - profDf$BAlag) / (profDf$year - profDf$yearlag)
-  profDf <- profDf[, c('year', 'src', 'site', 'species', 'N', 'Dg', 'H', 'BA', 'V', 'BAI_yr')]
+# calculate mean BAI/yr on observation data set
+  obsDf <- sp[sp$src == 'data',]
+  if (evalSite == 'profound'){
+    obsDf$BAI_yr <- (obsDf$BA - obsDf$BAlag) / (obsDf$year - obsDf$yearlag)
+  } else if (evalSite == 'bauges'){ # growth period + 1 for the bauges data set
+    obsDf$BAI_yr <- (obsDf$BA - obsDf$BAlag) / ((obsDf$year - obsDf$yearlag) + 1)
+  }
+  obsDf <- obsDf[, c('year', 'src', 'site', 'species', 'N', 'Dg', 'H', 'BA', 'V', 'BAI_yr')]
 
 # merge profound + models
-  sp <- rbind(modelDf, profDf)
+  sp <- rbind(modelDf, obsDf)
 
 ################################################################################
 # calculate yearly aggregated index (N, Dg, etc) for observed and predicted data
