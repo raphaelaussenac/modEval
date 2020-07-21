@@ -1,4 +1,8 @@
 MSD <- function(evaldf){
+# provide 'evaldf' dataframe with three columns:
+# year = year
+# Y = observations
+# X = predictions
 
   # calculate x, y and x*y, b and r²
   evaldf$x <- evaldf$X - mean(evaldf$X)
