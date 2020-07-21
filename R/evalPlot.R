@@ -5,6 +5,7 @@ library(tidyr)
 library(fmsb)
 library(plyr)
 library(viridis)
+source('R/msd.R')
 
 WritePlot <- function(evalSite){
   alldf <- read.csv(paste0('./data/eval_', evalSite, '.csv'))
@@ -55,22 +56,12 @@ WritePlot <- function(evalSite){
                 # then if there is some data left
                 if (nrow(evaldf) > 0){
                   # calculate x, y and x*y, b and r²
-                  evaldf$x <- evaldf$X - mean(evaldf$X)
-                  evaldf$y <- evaldf$Y - mean(evaldf$Y)
-                  evaldf$xy <-evaldf$x * evaldf$y
-                  model <- lm(evaldf$Y ~ evaldf$X)
-                  b <- as.numeric(coef(model)[2]) # = sum(evaldf$xy) / sum(evaldf$x^2)
-                  r2 <- summary(model)$r.squared # = ( sum(evaldf$xy)^2 ) / ( sum(evaldf$x^2)*sum(evaldf$y^2) )
-                  # calculate MSD and its 3 components
-                  MSD <- sum( (evaldf$X - evaldf$Y) ^2) / nrow(evaldf)
-                  SB <- (mean(evaldf$X) - mean(evaldf$Y))^2
-                  NU <- ((1 - b)^2) * ( sum(evaldf$x^2) / nrow(evaldf) )
-                  LC <- (1 - r2) * ( sum(evaldf$y^2) / nrow(evaldf) )
+                  msd <- MSD(evaldf)
                   # save
-                  deviancedf <- rbind(deviancedf, c(i, 'MSD', MSD))
-                  deviancedf <- rbind(deviancedf, c(i, 'SB', SB))
-                  deviancedf <- rbind(deviancedf, c(i, 'NU', NU))
-                  deviancedf <- rbind(deviancedf, c(i, 'LC', LC))
+                  deviancedf <- rbind(deviancedf, c(i, 'MSD', msd[1]))
+                  deviancedf <- rbind(deviancedf, c(i, 'SB', msd[2]))
+                  deviancedf <- rbind(deviancedf, c(i, 'NU', msd[3]))
+                  deviancedf <- rbind(deviancedf, c(i, 'LC', msd[4]))
                 } else {
                   deviancedf <- rbind(deviancedf, c(i, 'MSD', NA))
                   deviancedf <- rbind(deviancedf, c(i, 'SB', NA))
