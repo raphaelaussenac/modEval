@@ -50,7 +50,7 @@ Example <- function(){
 	require(ggplot2)
     Nvar <- "D_cm"
     Inter <- 10
-    model <- c('profound', '4c', 'landclim', 'Salem')
+    model <- c('profound', '4c', 'landclim', 'salem')
     site <- c('kroof','solling-spruce', 'solling-beech')
     OUT <- ReturnHill(Nvar, model, site, Inter)
     ggplot(OUT, aes(x=year, y=Sh, col=model)) + geom_line() +
@@ -73,4 +73,3 @@ ReturnHillOld <- function(Nvar='D_cm', model='4c', site='kroof', Inter=10, path=
     }
     return(Hill)
 }
-

@@ -8,7 +8,7 @@ WriteDataSim <- function(evalSite){
   fileNames <- Sys.glob(paste0(path, '*.csv'))
 
 # list of sources (data and models)
-  listsrc <- c('data', 'landclim', '4c', 'Salem')
+  listsrc <- c('data', 'landclim', '4c', 'salem')
 # list of sites (only for profound)
   if(evalSite == 'profound'){
     listsite <- c('kroof', 'solling-beech', 'solling-spruce')
