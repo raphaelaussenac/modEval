@@ -16,9 +16,19 @@ source("R/assembleDataAndSim.R")
 source("R/indexCalc.R")
 source("R/evalPlot.R")
 source('R/HetIndex.R')
-plan <- drake_plan(
-    IsDataFileProfound = WriteDataSim('profound'),
-    IsDataIndexProfound = WriteIndex('profound'),
-    IsFiguresProfound = WritePlot('profound')
 
+################################################################################
+# choose site
+################################################################################
+
+evalSite <- 'bauges'
+
+################################################################################
+################################################################################
+################################################################################
+
+plan <- drake_plan(
+    IsDataFileProfound = WriteDataSim(evalSite),
+    IsDataIndexProfound = WriteIndex(evalSite),
+    IsFiguresProfound = WritePlot(evalSite)
 )

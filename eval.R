@@ -25,4 +25,4 @@ WriteDataSim('bauges')
 WriteIndex('bauges')
 
 # evaluation and plots
-WritePlot('profound')
+WritePlot('bauges')
