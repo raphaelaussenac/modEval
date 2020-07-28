@@ -90,7 +90,7 @@ WritePlot <- function(evalSite){
 # evaluation and time series at stand level
 ################################################################################
 # create directory to save plots
-  if (!(dir.exists('plotEval'))){dir.create('plotEval', recursive = TRUE)}
+  if (!(dir.exists(paste0('plotEval/', evalSite)))){dir.create(paste0('plotEval/', evalSite), recursive = TRUE)}
 
 # evaluation
   evaluation$site = factor(evaluation$site, levels = unique(alldf$site))
@@ -108,7 +108,7 @@ WritePlot <- function(evalSite){
         legend.position = "bottom",
         legend.title=element_blank(),
         panel.spacing = unit(20, 'pt'))
-  ggsave(file=paste('./plotEval/eval.pdf', sep = '_'), plot=pl, width = 8, height = 12)
+  ggsave(file = paste0('./plotEval/', evalSite, '/eval.pdf'), plot=pl, width = 8, height = 12)
 
 
 # time series
@@ -132,7 +132,7 @@ WritePlot <- function(evalSite){
         legend.position = "bottom",
         legend.title=element_blank(),
         panel.spacing = unit(20, 'pt'))
-  ggsave(file=paste('./plotEval/ts.pdf', sep = '_'), width = 8, height = 12)
+  ggsave(file = paste0('./plotEval/', evalSite, '/ts.pdf'), width = 8, height = 12)
 
 
 ################################################################################
@@ -153,7 +153,7 @@ WritePlot <- function(evalSite){
       legend.position = "bottom",
       legend.title=element_blank(),
       panel.spacing = unit(20, 'pt'))
-  ggsave(file=paste('./plotEval/evalSpKroof.pdf', sep = '_'), width = 8, height = 8)
+  ggsave(file = paste0('./plotEval/', evalSite, '/evalSpKroof.pdf'), width = 8, height = 8)
 
 
 # time series
@@ -176,7 +176,7 @@ WritePlot <- function(evalSite){
       legend.position = "bottom",
       legend.title=element_blank(),
       panel.spacing = unit(20, 'pt'))
-  ggsave(file=paste('./plotEval/tsSpKroof.pdf', sep = '_'), width = 8, height = 8)
+  ggsave(file = paste0('./plotEval/', evalSite, '/tsSpKroof.pdf'), width = 8, height = 8)
 
 
 ################################################################################
@@ -196,7 +196,7 @@ WritePlot <- function(evalSite){
   relativeMSD <- spread(relativeMSD, variable, relMSD)
 
 # radarchart
-  pdf(file = "./plotEval/radar.pdf", width = 13, height = 5)
+  pdf(file = paste0('./plotEval/', evalSite, '/radar.pdf'), width = 13, height = 5)
   par(mfrow = c(1,3))
   # color vector
   # colors_border=c( rgb(0.2,0.5,0.5,0.9), rgb(0.8,0.2,0.5,0.9) , rgb(0.7,0.5,0.1,0.9) )

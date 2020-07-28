@@ -20,6 +20,10 @@ source('R/msd.R')
 alldf <- read.csv(paste0('./data/eval_', evalSite, '.csv'))
 alldf <- alldf[order(alldf$src, alldf$site, alldf$species, alldf$year),]
 
+# verify whether mortality is switched off
+# diffTree <- ddply(alldf[alldf$species == "allsp" & alldf$src == 'data',], .(site), summarise, diffNbTree = min(N) - max(N))
+# table(diffTree$diffNbTree)
+
 # keep only index associated to last growth year
 lastYear <- ddply(alldf, .(site), summarise, lastYear = max(year))
 alldf <- merge(alldf, lastYear, by = 'site')
@@ -98,12 +102,12 @@ deviancedf <- deviancedf[deviancedf$devMeasure != "MSD",]
 # evaluation and time series at stand level
 ################################################################################
 # create directory to save plots
-if (!(dir.exists('plotEval'))){dir.create('plotEval', recursive = TRUE)}
+if (!(dir.exists(paste0('plotEval/', evalSite)))){dir.create(paste0('plotEval/', evalSite), recursive = TRUE)}
 
 #
 pl <- ggplot(data = deviancedf[deviancedf$sp == 'allsp',], aes(x = mod, y = value, fill = devMeasure)) +
   geom_bar(stat = "identity") +
-  facet_grid(. ~ variable)+
+  facet_wrap(. ~ variable, scale = "free")+
   theme_light() +
   theme(panel.grid.minor = element_blank(),
       # panel.grid.major = element_blank(),
@@ -112,8 +116,7 @@ pl <- ggplot(data = deviancedf[deviancedf$sp == 'allsp',], aes(x = mod, y = valu
       legend.position = "bottom",
       legend.title=element_blank(),
       panel.spacing = unit(20, 'pt'))
-ggsave(file=paste('./plotEval/evalBauges.pdf', sep = '_'), plot=pl, width = 8, height = 12)
-
+ggsave(file = paste0('plotEval/', evalSite, '/eval.pdf'), plot=pl, width = 8, height = 5)
 
 # ################################################################################
 # # radarchart relative MSD at stand level
