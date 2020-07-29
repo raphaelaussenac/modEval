@@ -71,11 +71,24 @@ WritePlotBauges <- function(evalSite){
           deviancedf <- rbind(deviancedf, c(i, 'SB', msd[2], as.character(mod), as.character(sp)))
           deviancedf <- rbind(deviancedf, c(i, 'NU', msd[3], as.character(mod), as.character(sp)))
           deviancedf <- rbind(deviancedf, c(i, 'LC', msd[4], as.character(mod), as.character(sp)))
+
+          # calculate relative difference
+          relDiff <- (evaldf$X * 100 / evaldf$Y) - 100
+          # save
+          deviancedf <- rbind(deviancedf, setNames(data.frame(rep(i, length(relDiff)), rep('relDiff', length(relDiff)), relDiff, rep(as.character(mod), length(relDiff)), rep(as.character(sp), length(relDiff))), names(deviancedf)))
+
+          # calculate absolute difference
+          absDiff <- evaldf$X - evaldf$Y
+          # save
+          deviancedf <- rbind(deviancedf, setNames(data.frame(rep(i, length(absDiff)), rep('absDiff', length(absDiff)), absDiff, rep(as.character(mod), length(absDiff)), rep(as.character(sp), length(absDiff))), names(deviancedf)))
+
         } else {
           deviancedf <- rbind(deviancedf, c(i, 'MSD', NA, as.character(mod), as.character(sp)))
           deviancedf <- rbind(deviancedf, c(i, 'SB', NA, as.character(mod), as.character(sp)))
           deviancedf <- rbind(deviancedf, c(i, 'NU', NA, as.character(mod), as.character(sp)))
           deviancedf <- rbind(deviancedf, c(i, 'LC', NA, as.character(mod), as.character(sp)))
+          deviancedf <- rbind(deviancedf, c(i, 'relDiff', NA, as.character(mod), as.character(sp)))
+          deviancedf <- rbind(deviancedf, c(i, 'absDiff', NA, as.character(mod), as.character(sp)))
         }
       }
     }
@@ -87,8 +100,13 @@ WritePlotBauges <- function(evalSite){
   deviancedf$mod <- as.factor(deviancedf$mod)
   deviancedf$sp <- as.factor(deviancedf$sp)
 
+  # order factor to get stand variables first (N, Dg...) and heterogeneity index afterwards
+  deviancedf$variable <- factor(deviancedf$variable, levels = c('N', 'Dg', 'BA', 'H', 'BAI_yr', 'Sh', 'GS', 'Simp', 'GI'))
+
   deviancedfMSD <- deviancedf[deviancedf$devMeasure == "MSD",]
-  deviancedf <- deviancedf[deviancedf$devMeasure != "MSD",]
+  relDiffdf <- deviancedf[deviancedf$devMeasure == 'relDiff',]
+  absDiffdf <- deviancedf[deviancedf$devMeasure == 'absDiff',]
+  deviancedf <- deviancedf[!(deviancedf$devMeasure %in% c("MSD", 'relDiff', 'absDiff')),]
 
   ################################################################################
   # evaluation and time series at stand level
@@ -96,8 +114,8 @@ WritePlotBauges <- function(evalSite){
   # create directory to save plots
   if (!(dir.exists(paste0('plotEval/', evalSite)))){dir.create(paste0('plotEval/', evalSite), recursive = TRUE)}
 
-  #
-  pl <- ggplot(data = deviancedf[deviancedf$sp == 'allsp',], aes(x = mod, y = value, fill = devMeasure)) +
+  # plot mean square deviation
+  pl1 <- ggplot(data = deviancedf[deviancedf$sp == 'allsp',], aes(x = mod, y = value, fill = devMeasure)) +
     geom_bar(stat = "identity") +
     facet_wrap(. ~ variable, scale = "free")+
     theme_light() +
@@ -106,9 +124,40 @@ WritePlotBauges <- function(evalSite){
         strip.background = element_blank(),
         strip.text = element_text(colour = 'black'),
         legend.position = "bottom",
-        legend.title=element_blank(),
+        legend.title = element_blank(),
         panel.spacing = unit(20, 'pt'))
-  ggsave(file = paste0('plotEval/', evalSite, '/eval.pdf'), plot=pl, width = 8, height = 5)
+  ggsave(file = paste0('plotEval/', evalSite, '/eval.pdf'), plot = pl1, width = 8, height = 10)
+
+  # plot relative difference between observations and predictions
+  pl2 <- ggplot(data = relDiffdf[relDiffdf$sp == 'allsp',], aes(x = mod, y = value)) +
+    # geom_bar(stat = "identity") +
+    geom_boxplot() +
+    facet_wrap(. ~ variable, scale = "free")+
+    theme_light() +
+    theme(panel.grid.minor = element_blank(),
+        # panel.grid.major = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_text(colour = 'black'),
+        legend.position = "bottom",
+        legend.title = element_blank(),
+        panel.spacing = unit(20, 'pt'))
+  ggsave(file = paste0('plotEval/', evalSite, '/relDiff.pdf'), plot = pl2, width = 8, height = 10)
+
+  # plot absolute difference between observations and predictions
+  pl3 <- ggplot(data = absDiffdf[absDiffdf$sp == 'allsp',], aes(x = mod, y = value)) +
+    # geom_bar(stat = "identity") +
+    geom_boxplot() +
+    facet_wrap(. ~ variable, scale = "free")+
+    theme_light() +
+    theme(panel.grid.minor = element_blank(),
+        # panel.grid.major = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_text(colour = 'black'),
+        legend.position = "bottom",
+        legend.title = element_blank(),
+        panel.spacing = unit(20, 'pt'))
+  ggsave(file = paste0('plotEval/', evalSite, '/absDiff.pdf'), plot = pl3, width = 8, height = 10)
+
 
   # ################################################################################
   # # radarchart relative MSD at stand level
