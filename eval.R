@@ -14,15 +14,15 @@ if (Sys.info()["sysname"] == "Darwin"){
 
 # source
 source("R/assembleDataAndSim.R")
-source("R/indexCalc.R")
+source("R/standVarCalc.R")
 source("R/evalPlot.R")
-source('R/HetIndex.R')
+source('R/hetIndex.R')
 
 # assemble data and simulations
-WriteDataSim('bauges')
+dataAndSim('bauges')
 
 # calculate index (N, Dg, BAI, GINI ...)
-WriteIndex('bauges')
+standVarCalc('bauges')
 
 # evaluation and plots
-WritePlot('bauges')
+evalMetricsCalc('bauges')

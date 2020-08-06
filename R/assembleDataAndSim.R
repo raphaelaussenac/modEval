@@ -2,7 +2,7 @@
 library(plyr)
 library(data.table)
 
-WriteDataSim <- function(evalSite){
+dataAndSim <- function(evalSite){
 # retrieve list of file (simulations and observations)
   path <- paste0('./data/obsAndSim/', evalSite, '/')
   fileNames <- Sys.glob(paste0(path, '*.csv'))

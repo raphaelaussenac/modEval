@@ -2,7 +2,7 @@
 library(plyr)
 library(data.table)
 
-WriteIndex <- function(evalSite){
+standVarCalc <- function(evalSite){
 # load data
   alldf <- read.csv(paste0('./data/all_', evalSite, '.csv'))
 
