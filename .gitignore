@@ -3,3 +3,4 @@
 .drake
 all_*.csv
 eval_*.csv
+notes.R

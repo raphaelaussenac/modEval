@@ -6,6 +6,7 @@ library(fmsb)
 library(plyr)
 library(viridis)
 library(stringr)
+library(broom)
 source('R/msd.R')
 
 WritePlotBauges <- function(evalSite){
@@ -51,32 +52,9 @@ WritePlotBauges <- function(evalSite){
     evaldf <- df
     colnames(evaldf)[colnames(evaldf) == 'data'] <- 'Y'
     colnames(evaldf)[colnames(evaldf) == mod] <- 'X'
-
-    # X and Y must have the same length (no missing value in X or Y)
-    evaldf <- evaldf[!is.na(evaldf$X) & !is.na(evaldf$Y),]
-
-    # Calculation
-    evaldf <- evaldf %>% group_by(species, variable) %>% mutate(x = X - mean(X, na.rm = TRUE),
-                                                   y = Y - mean(Y, na.rm = TRUE),
-                                                   xy = x * y)
-    MSD <- evaldf %>% group_by(species, variable) %>%  dplyr::summarise(MSD = sum( (X - Y) ^2, na.rm = TRUE) / length(X))
-    SB <- evaldf %>% group_by(species, variable) %>%  dplyr::summarise(SB = ( mean(X, na.rm = TRUE) - mean(Y, na.rm = TRUE) )^2 )
-    br2 <- evaldf %>% group_by(species, variable) %>% dplyr::summarise(b = sum(xy, na.rm = TRUE) / sum(x^2, na.rm = TRUE),
-                                                                    r2 = ( sum(xy, na.rm = TRUE)^2 ) / ( sum(x^2, na.rm = TRUE)*sum(y^2, na.rm = TRUE) ))
-    br2$NU1 <- (1 - br2$b)^2
-    br2$LC1 <- 1 - br2$r2
-    NU2 <- evaldf %>% group_by(species, variable) %>% dplyr::summarise(NU2 = sum(x^2, na.rm = TRUE) / length(x))
-    LC2 <- evaldf %>% group_by(species, variable) %>% dplyr::summarise(LC2 = sum(y^2, na.rm = TRUE) / length(y))
-    NU <- merge(br2, NU2, by = c('species', 'variable'))
-    NU$NU <- NU$NU1 * NU$NU2
-    LC <- merge(br2, LC2, by = c('species', 'variable'))
-    LC$LC <- LC$LC1 * LC$LC2
-
-    MSD3 <- merge(MSD, SB, by = c('species', 'variable'))
-    MSD3 <- merge(MSD3, NU[, c('species', 'variable', 'NU')])
-    MSD3 <- merge(MSD3, LC[, c('species', 'variable', 'LC')])
-    MSD3$mod <- mod
-    msd <- rbind(msd,MSD3)
+    # calculation
+    msd3 <- calc_msd(evaldf, mod, groups = c('species', 'variable'))
+    msd <- rbind(msd, msd3)
 
   }
 
@@ -91,13 +69,14 @@ WritePlotBauges <- function(evalSite){
   msd <- melt(msd, id.vars = c('species', 'variable', 'mod'))
   colnames(msd)[ncol(msd)-1] <- 'devMeasure'
   # order factor
-  # msd$variable <- factor(msd$variable, levels = c('N', 'Dg', 'BA', 'H', 'BAI_yr', 'Sh', 'GS', 'Simp', 'GI'))
   msd$devMeasure <- factor(msd$devMeasure, levels = c('MSD', 'LC', 'NU', 'SB'))
 
-  ggplot(data = msd[msd$devMeasure != 'MSD' & msd$species == 'allsp', ], aes(x = mod, y = value, fill = devMeasure)) +
+  pl1 <- ggplot(data = msd[msd$devMeasure != 'MSD' & msd$species == 'allsp', ], aes(x = mod, y = value, fill = devMeasure)) +
     geom_bar(stat = "identity") +
     facet_wrap(. ~ variable, scale = "free") +
     theme_light() +
+    xlab('models') +
+    ylab('mean square deviation') +
     theme(panel.grid.minor = element_blank(),
         # panel.grid.major = element_blank(),
         strip.background = element_blank(),
@@ -105,6 +84,7 @@ WritePlotBauges <- function(evalSite){
         legend.position = "bottom",
         legend.title = element_blank(),
         panel.spacing = unit(20, 'pt'))
+  ggsave(file = paste0('./plotEval/', evalSite, '/msd.pdf'), plot = pl1, width = 10, height = 10)
 
   # plot absolute and relative difference between observations and predictions
   diff <- melt(df, id.vars = c('site', 'species', 'variable'))
@@ -116,11 +96,13 @@ WritePlotBauges <- function(evalSite){
   diff$temp <- NULL
 
   # abs difference
-  ggplot(data = diff[diff$sp == 'allsp' & diff$diff == 'absDiff',], aes(x =  mod, y = value)) +
+  pl2 <- ggplot(data = diff[diff$sp == 'allsp' & diff$diff == 'absDiff',], aes(x =  mod, y = value)) +
     # geom_bar(stat = "identity") +
     geom_boxplot() +
     facet_wrap(. ~ variable, scale = "free") +
     theme_light() +
+    xlab('models') +
+    ylab('predictions - observations') +
     theme(panel.grid.minor = element_blank(),
         # panel.grid.major = element_blank(),
         strip.background = element_blank(),
@@ -128,13 +110,16 @@ WritePlotBauges <- function(evalSite){
         legend.position = "bottom",
         legend.title = element_blank(),
         panel.spacing = unit(20, 'pt'))
+  ggsave(file = paste0('./plotEval/', evalSite, '/absDiff.pdf'), plot = pl2, width = 10, height = 10)
 
   # abs difference
-  ggplot(data = diff[diff$sp == 'allsp' & diff$diff == 'relDiff',], aes(x =  mod, y = value)) +
+  pl3 <- ggplot(data = diff[diff$sp == 'allsp' & diff$diff == 'relDiff',], aes(x =  mod, y = value)) +
     # geom_bar(stat = "identity") +
     geom_boxplot() +
     facet_wrap(. ~ variable, scale = "free") +
     theme_light() +
+    xlab('models') +
+    ylab('(predictions * 100 / observations) - 100') +
     theme(panel.grid.minor = element_blank(),
         # panel.grid.major = element_blank(),
         strip.background = element_blank(),
@@ -142,6 +127,7 @@ WritePlotBauges <- function(evalSite){
         legend.position = "bottom",
         legend.title = element_blank(),
         panel.spacing = unit(20, 'pt'))
+    ggsave(file = paste0('./plotEval/', evalSite, '/relDiff.pdf'), plot = pl3, width = 10, height = 10)
 
   # regression
   reg <- dcast(diff, site + species + variable + mod ~ diff)
@@ -151,11 +137,12 @@ WritePlotBauges <- function(evalSite){
   reg <- merge(reg, diff[diff$mod == 'data',c('site', 'species', 'variable', 'value')], by = c('site', 'species', 'variable'))
   colnames(reg)[length(colnames(reg))] <- 'obs'
 
-  ggplot(data = reg[reg$species == 'allsp',]) +
-  geom_point(aes(x = obs, y = absDiff, col = mod), alpha = 0.5) +
+  pl4 <- ggplot(data = reg[reg$species == 'allsp',], aes(x = obs, y = absDiff, col = mod)) +
+  geom_point(alpha = 0.5) +
   facet_wrap(. ~ variable, scale = "free") +
-  ylab('predicted - observed') +
-  xlab('observed') +
+  geom_smooth(method = 'lm', formula = y ~ x) +
+  ylab('predictions - observations') +
+  xlab('observations') +
   theme_light() +
   theme(panel.grid.minor = element_blank(),
       # panel.grid.major = element_blank(),
@@ -164,7 +151,43 @@ WritePlotBauges <- function(evalSite){
       legend.position = "bottom",
       legend.title = element_blank(),
       panel.spacing = unit(20, 'pt'))
+  ggsave(file = paste0('./plotEval/', evalSite, '/regDiff.pdf'), plot = pl4, width = 10, height = 10)
 
+  # plot BAI_yr absolute differences (pred - obs) against all other observed variables
+  # TODO: add environmental varibales
+  BAI <- reg[reg$variable == 'BAI_yr', c('site', 'species', 'mod', 'absDiff'),]
+  colnames(BAI)[ncol(BAI)] <- 'absDiffBAI_yr'
+  temp <- reg[, c('site', 'species', 'variable', 'obs'),]
+  temp <- temp[!duplicated(temp),]
+  BAIdiff <- merge(BAI, temp, by  = c('site', 'species'))
+
+  # lm for BAI_absolute_diffrence ~ all variables
+  modeldf <- BAIdiff[BAIdiff$species == 'allsp' & !is.na(BAIdiff$obs),] %>% group_by(variable, mod)
+  models <- do(modeldf,
+      glance( # replace glance by tidy to get models parameter estimates
+        lm(absDiffBAI_yr ~ obs, data = .)))
+  models <- data.frame(models)
+  # add to BAIdiff
+  BAIdiff <- merge(BAIdiff, models[, c('variable', 'mod', 'r.squared')], by = c('variable', 'mod'), all.x = TRUE)
+
+  pl5 <- ggplot(data = BAIdiff[BAIdiff$species == 'allsp',], aes(x = obs, y = absDiffBAI_yr, col = mod)) +
+  geom_point(alpha = 0.5) +
+  geom_text(data = models[models$mod == 'landclim',], aes(x = -Inf, y = Inf, label = paste('R²=',round(r.squared, 3))), hjust = 0, vjust = 1) +
+  geom_text(data = models[models$mod == 'salem',], aes(x = Inf, y = Inf, label = paste('R²=',round(r.squared, 3))), hjust = 1, vjust = 1) +
+  facet_wrap(. ~ variable, scale = "free", strip.position = "bottom") +
+  geom_smooth(method = 'lm', formula = y ~ x) +
+  ylab('BAI_yr predictions - BAI_yr observations') +
+  xlab('observations') +
+  theme_light() +
+  theme(panel.grid.minor = element_blank(),
+      # panel.grid.major = element_blank(),
+      strip.background = element_blank(),
+      strip.placement = "outside",
+      strip.text = element_text(colour = 'black'),
+      legend.position = "bottom",
+      legend.title = element_blank(),
+      panel.spacing = unit(20, 'pt'))
+  ggsave(file = paste0('./plotEval/', evalSite, '/BAIdiff.pdf'), plot = pl5, width = 10, height = 10)
 
   return(1)
 
