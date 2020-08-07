@@ -83,7 +83,10 @@ evalMetricsCalc <- function(evalSite){
   # plot MSD and its 3 components
   msdPlot(evalSite, msd, groups)
 
-  # plot msd and times seris of variable at specific 'profound' site
+  # plot msd radarchart
+  msdRadarPlot(evalSite, msd)
+
+  # plot msd and times seris of variable for all species at specific 'profound' site
   if (evalSite == 'profound'){
     tsPlot(evalSite, df)
     tsSpPlot(evalSite, df, site = 'kroof')
@@ -96,8 +99,8 @@ evalMetricsCalc <- function(evalSite){
     diff <- diffPlot(evalSite, df, 'absDiff')
     diffPlot(evalSite, df, 'relDiff')
     models <- regDiffPlot(evalSite, diff)
+    return(models)
   }
 
-  return(models)
 
 }
