@@ -39,12 +39,7 @@ evalMetricsCalc <- function(evalSite){
 
   }
 
-  # round
-  # df$data <- round(df$data, 3)
-  # df$landclim <- round(df$landclim, 3)
-  # df$salem <- round(df$salem, 3)
-
-  # order factor
+  # sort factor
   df$variable <- factor(df$variable, levels = c('N', 'Dg', 'BA', 'H', 'BAI_yr', 'Sh', 'GS', 'Simp', 'GI', 'V'))
 
   ##############################################################################
@@ -87,6 +82,13 @@ evalMetricsCalc <- function(evalSite){
 
   # plot MSD and its 3 components
   msdPlot(evalSite, msd, groups)
+
+  # plot variable time series for 'profound'
+  if (evalSite == 'profound'){
+    tsPlot(evalSite, df)
+    tsSpPlot(evalSite, df, site = 'kroof')
+    msdSpPlot(evalSite, msd, groups, site = 'kroof')
+  }
 
   return(1)
 

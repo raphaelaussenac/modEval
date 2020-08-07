@@ -1,13 +1,13 @@
+# plot mean square deviation for each variable at each site
 msdPlot <- function(evalSite, msd, groups){
 
-  # plot mean square deviation
-  msd <- msd[!is.na(msd$SB) & !is.na(msd$NU) & !is.na(msd$LC),]
-  msd <- reshape2::melt(msd, id.vars = c(groups, 'mod'))
-  colnames(msd)[ncol(msd)-1] <- 'devMeasure'
+  msdDf <- msd[!is.na(msd$SB) & !is.na(msd$NU) & !is.na(msd$LC),]
+  msdDf <- reshape2::melt(msdDf, id.vars = c(groups, 'mod'))
+  colnames(msdDf)[ncol(msdDf)-1] <- 'devMeasure'
   # order factor
-  msd$devMeasure <- factor(msd$devMeasure, levels = c('MSD', 'LC', 'NU', 'SB'))
+  msdDf$devMeasure <- factor(msdDf$devMeasure, levels = c('MSD', 'LC', 'NU', 'SB'))
 
-  pl1 <- ggplot(data = msd[msd$devMeasure != 'MSD' & msd$species == 'allsp', ], aes(x = mod, y = value, fill = devMeasure)) +
+  pl1 <- ggplot(data = msdDf[msdDf$devMeasure != 'MSD' & msdDf$species == 'allsp', ], aes(x = mod, y = value, fill = devMeasure)) +
     geom_bar(stat = "identity") +
     # facet_wrap(. ~ variable, scale = "free") +
     theme_light() +
@@ -29,6 +29,98 @@ msdPlot <- function(evalSite, msd, groups){
   }
 
 }
+
+
+# plot mean square deviation for each variable at each site
+msdSpPlot <- function(evalSite, msd, groups, site){
+
+  msdDf <- msd[!is.na(msd$SB) & !is.na(msd$NU) & !is.na(msd$LC) & msd$site == site & msd$species != 'allsp',]
+  msdDf <- reshape2::melt(msdDf, id.vars = c(groups, 'mod'))
+  colnames(msdDf)[ncol(msdDf)-1] <- 'devMeasure'
+  spLevelVariable <- c('N', 'Dg', 'BA', 'BAI_yr')
+  msdDf <- msdDf[msdDf$variable %in% spLevelVariable, ]
+  # order factor
+  msdDf$devMeasure <- factor(msdDf$devMeasure, levels = c('MSD', 'LC', 'NU', 'SB'))
+
+  pl1 <- ggplot(data = msdDf[msdDf$devMeasure != 'MSD', ], aes(x = mod, y = value, fill = devMeasure)) +
+    geom_bar(stat = "identity") +
+    facet_grid(variable ~ species, scale = "free") +
+    theme_light() +
+    xlab('models') +
+    ylab('mean square deviation') +
+    theme(panel.grid.minor = element_blank(),
+        # panel.grid.major = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_text(colour = 'black'),
+        legend.position = "bottom",
+        legend.title = element_blank(),
+        panel.spacing = unit(20, 'pt'))
+  ggsave(file = paste0('./plotEval/', evalSite, '/msdSp', site, '.pdf'), plot = pl1, width = 8, height = 12)
+
+}
+
+
+# plot time series for each variable at each site
+tsPlot <- function(evalSite, df){
+
+  ts <- df[df$species == 'allsp', ]
+  ts <- reshape2::melt(ts, id.vars = c('site', 'species', 'year', 'variable'))
+  colnames(ts)[ncol(ts)-1] <- 'src'
+  ts <- ts[ts$variable != 'V', ]
+  # sort factor
+  ts$src <- factor(ts$src, levels = c('data', '4c', 'landclim', 'salem'))
+
+  pl1 <- ggplot() +
+    geom_path(data = ts[!is.na(ts$value),], aes(x = year, y = value, col = src), linetype = 'dashed') +
+    geom_line(data = ts[ts$src == 'data' & !is.na(ts$value),], aes(x = year, y = value, col = src)) +
+    facet_grid(variable ~ site, scale = "free") +
+    theme_light() +
+    theme(panel.grid.minor = element_blank(),
+          # panel.grid.major = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_text(colour = 'black'),
+        legend.position = "bottom",
+        legend.title=element_blank(),
+        panel.spacing = unit(20, 'pt'))
+  ggsave(file = paste0('./plotEval/', evalSite, '/ts.pdf'), width = 8, height = 12)
+
+}
+
+
+# plot time series for ecah species at specific site
+tsSpPlot <- function(evalSite, df, site){
+
+  ts <- df[df$species != 'allsp' & df$site == site, ]
+  ts <- reshape2::melt(ts, id.vars = c('site', 'species', 'year', 'variable'))
+  colnames(ts)[ncol(ts)-1] <- 'src'
+  spLevelVariable <- c('N', 'Dg', 'BA', 'BAI_yr')
+  ts <- ts[ts$variable %in% spLevelVariable, ]
+  # sort factor
+  ts$src <- factor(ts$src, levels = c('data', '4c', 'landclim', 'salem'))
+
+  pl1 <- ggplot() +
+    geom_path(data = ts[!is.na(ts$value),], aes(x = year, y = value, col = src), linetype = 'dashed') +
+    geom_line(data = ts[ts$src == 'data' & !is.na(ts$value),], aes(x = year, y = value, col = src)) +
+    facet_grid(variable ~ species, scale = "free") +
+    theme_light() +
+    theme(panel.grid.minor = element_blank(),
+          # panel.grid.major = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_text(colour = 'black'),
+        legend.position = "bottom",
+        legend.title=element_blank(),
+        panel.spacing = unit(20, 'pt'))
+  ggsave(file = paste0('./plotEval/', evalSite, '/tsSp', site, '.pdf'), width = 8, height = 12)
+
+}
+
+
+
+
+
+
+
+
 
 
 
