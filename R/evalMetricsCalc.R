@@ -83,13 +83,21 @@ evalMetricsCalc <- function(evalSite){
   # plot MSD and its 3 components
   msdPlot(evalSite, msd, groups)
 
-  # plot variable time series for 'profound'
+  # plot msd and times seris of variable at specific 'profound' site
   if (evalSite == 'profound'){
     tsPlot(evalSite, df)
     tsSpPlot(evalSite, df, site = 'kroof')
     msdSpPlot(evalSite, msd, groups, site = 'kroof')
   }
 
-  return(1)
+  # plot variables errors (pred-obs) = f(environmental and stand features)
+  # at bauges site
+  if (evalSite == 'bauges'){
+    diff <- diffPlot(evalSite, df, 'absDiff')
+    diffPlot(evalSite, df, 'relDiff')
+    models <- regDiffPlot(evalSite, diff)
+  }
+
+  return(models)
 
 }

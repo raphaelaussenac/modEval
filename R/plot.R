@@ -115,50 +115,9 @@ tsSpPlot <- function(evalSite, df, site){
 }
 
 
+# plot absolute and relative difference between observations and predictions
+diffPlot <- function(evalSite, df, relabsdiff){
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-plotplot <- function(evalSite, msd, df){
-
-  ################################################################################
-  # plots
-  ################################################################################
-  # create directory to save plots
-  if (!(dir.exists(paste0('plotEval/', evalSite)))){dir.create(paste0('plotEval/', evalSite), recursive = TRUE)}
-
-  # plot mean square deviation
-  msd <- melt(msd, id.vars = c('species', 'variable', 'mod'))
-  colnames(msd)[ncol(msd)-1] <- 'devMeasure'
-  # order factor
-  msd$devMeasure <- factor(msd$devMeasure, levels = c('MSD', 'LC', 'NU', 'SB'))
-
-  pl1 <- ggplot(data = msd[msd$devMeasure != 'MSD' & msd$species == 'allsp', ], aes(x = mod, y = value, fill = devMeasure)) +
-    geom_bar(stat = "identity") +
-    facet_wrap(. ~ variable, scale = "free") +
-    theme_light() +
-    xlab('models') +
-    ylab('mean square deviation') +
-    theme(panel.grid.minor = element_blank(),
-        # panel.grid.major = element_blank(),
-        strip.background = element_blank(),
-        strip.text = element_text(colour = 'black'),
-        legend.position = "bottom",
-        legend.title = element_blank(),
-        panel.spacing = unit(20, 'pt'))
-  ggsave(file = paste0('./plotEval/', evalSite, '/msd.pdf'), plot = pl1, width = 10, height = 10)
-
-  # plot absolute and relative difference between observations and predictions
   diff <- melt(df, id.vars = c('site', 'species', 'variable'))
   colnames(diff)[ncol(diff)-1] <- 'temp'
   # diff$src <- strsplit(as.character(diff$temp), '_')[[1]][1]
@@ -167,14 +126,13 @@ plotplot <- function(evalSite, msd, df){
   diff[diff$diff == '', 'diff'] <- 'obsPred'
   diff$temp <- NULL
 
-  # abs difference
-  pl2 <- ggplot(data = diff[diff$sp == 'allsp' & diff$diff == 'absDiff',], aes(x =  mod, y = value)) +
+  pl1 <- ggplot(data = diff[diff$sp == 'allsp' & diff$diff == relabsdiff,], aes(x =  mod, y = value)) +
     # geom_bar(stat = "identity") +
     geom_boxplot() +
     facet_wrap(. ~ variable, scale = "free") +
     theme_light() +
     xlab('models') +
-    ylab('predictions - observations') +
+    # ylab('predictions - observations') +
     theme(panel.grid.minor = element_blank(),
         # panel.grid.major = element_blank(),
         strip.background = element_blank(),
@@ -182,26 +140,22 @@ plotplot <- function(evalSite, msd, df){
         legend.position = "bottom",
         legend.title = element_blank(),
         panel.spacing = unit(20, 'pt'))
-  ggsave(file = paste0('./plotEval/', evalSite, '/absDiff.pdf'), plot = pl2, width = 10, height = 10)
+  if(relabsdiff == 'absDiff'){
+    pl1 <- pl1 + ylab('predictions - observations')
+  } else if(relabsdiff == 'relDiff'){
+    pl1 <- pl1 + ylab('(predictions * 100 / observations) - 100')
+  }
+  ggsave(file = paste0('./plotEval/', evalSite, '/', relabsdiff, '.pdf'), plot = pl1, width = 10, height = 10)
 
-  # abs difference
-  pl3 <- ggplot(data = diff[diff$sp == 'allsp' & diff$diff == 'relDiff',], aes(x =  mod, y = value)) +
-    # geom_bar(stat = "identity") +
-    geom_boxplot() +
-    facet_wrap(. ~ variable, scale = "free") +
-    theme_light() +
-    xlab('models') +
-    ylab('(predictions * 100 / observations) - 100') +
-    theme(panel.grid.minor = element_blank(),
-        # panel.grid.major = element_blank(),
-        strip.background = element_blank(),
-        strip.text = element_text(colour = 'black'),
-        legend.position = "bottom",
-        legend.title = element_blank(),
-        panel.spacing = unit(20, 'pt'))
-    ggsave(file = paste0('./plotEval/', evalSite, '/relDiff.pdf'), plot = pl3, width = 10, height = 10)
+  return(diff)
 
-  # regression
+}
+
+# plot regression diff = f(environmental and stand features)
+# and return models specifications
+regDiffPlot <- function(evalSite, diff){
+
+  # requires 'diff' dataframe from 'diffPlot' function
   reg <- dcast(diff, site + species + variable + mod ~ diff)
   reg <- reg[reg$mod != 'data',]
   colnames(reg)[colnames(reg) == 'obsPred'] <- 'pred'
@@ -209,7 +163,7 @@ plotplot <- function(evalSite, msd, df){
   reg <- merge(reg, diff[diff$mod == 'data',c('site', 'species', 'variable', 'value')], by = c('site', 'species', 'variable'))
   colnames(reg)[length(colnames(reg))] <- 'obs'
 
-  pl4 <- ggplot(data = reg[reg$species == 'allsp',], aes(x = obs, y = absDiff, col = mod)) +
+  pl1 <- ggplot(data = reg[reg$species == 'allsp',], aes(x = obs, y = absDiff, col = mod)) +
   geom_point(alpha = 0.5) +
   facet_wrap(. ~ variable, scale = "free") +
   geom_smooth(method = 'lm', formula = y ~ x) +
@@ -223,7 +177,7 @@ plotplot <- function(evalSite, msd, df){
       legend.position = "bottom",
       legend.title = element_blank(),
       panel.spacing = unit(20, 'pt'))
-  ggsave(file = paste0('./plotEval/', evalSite, '/regDiff.pdf'), plot = pl4, width = 10, height = 10)
+  ggsave(file = paste0('./plotEval/', evalSite, '/regDiff.pdf'), plot = pl1, width = 10, height = 10)
 
   # plot BAI_yr absolute differences (pred - obs) against all other observed variables
   # TODO: add environmental varibales
@@ -242,7 +196,7 @@ plotplot <- function(evalSite, msd, df){
   # add models output to BAIdiff
   BAIdiff <- merge(BAIdiff, models[, c('variable', 'mod', 'r.squared')], by = c('variable', 'mod'), all.x = TRUE)
 
-  pl5 <- ggplot(data = BAIdiff[BAIdiff$species == 'allsp',], aes(x = obs, y = absDiffBAI_yr, col = mod)) +
+  pl2 <- ggplot(data = BAIdiff[BAIdiff$species == 'allsp',], aes(x = obs, y = absDiffBAI_yr, col = mod)) +
   geom_point(alpha = 0.5) +
   geom_text(data = models[models$mod == 'landclim',], aes(x = -Inf, y = Inf, label = paste('R²=',round(r.squared, 3))), hjust = 0, vjust = 1) +
   geom_text(data = models[models$mod == 'salem',], aes(x = Inf, y = Inf, label = paste('R²=',round(r.squared, 3))), hjust = 1, vjust = 1) +
@@ -259,10 +213,8 @@ plotplot <- function(evalSite, msd, df){
       legend.position = "bottom",
       legend.title = element_blank(),
       panel.spacing = unit(20, 'pt'))
-  ggsave(file = paste0('./plotEval/', evalSite, '/BAIdiff.pdf'), plot = pl5, width = 10, height = 10)
+  ggsave(file = paste0('./plotEval/', evalSite, '/BAIdiff.pdf'), plot = pl2, width = 10, height = 10)
 
-
-  return(1)
-
+  return(models)
 
 }
