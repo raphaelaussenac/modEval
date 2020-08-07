@@ -15,8 +15,10 @@ if (Sys.info()["sysname"] == "Darwin"){
 # source
 source("R/assembleDataAndSim.R")
 source("R/standVarCalc.R")
-source("R/evalPlot.R")
+source("R/evalMetricsCalc.R")
 source('R/hetIndex.R')
+source('R/msd.R')
+source('R/plot.R')
 
 # assemble data and simulations
 dataAndSim('bauges')

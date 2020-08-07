@@ -7,8 +7,6 @@ library(plyr)
 library(viridis)
 library(stringr)
 library(broom)
-source('R/msd.R')
-source('R/plot.R')
 
 evalMetricsCalc <- function(evalSite){
 
@@ -31,13 +29,13 @@ evalMetricsCalc <- function(evalSite){
     alldf[, c('lastYear', 'year')] <- NULL
 
     # long format
-    df <- melt(alldf, id.vars = c('site', 'src', 'species'))
-    df <- dcast(df, site + species + variable ~ src)
+    df <- reshape2::melt(alldf, id.vars = c('site', 'src', 'species'))
+    df <- reshape2::dcast(df, site + species + variable ~ src)
 
   } else if (evalSite == 'profound'){
     # long format
-    df <- melt(alldf, id.vars = c('site', 'src', 'species', 'year'))
-    df <- dcast(df, site + species + year + variable ~ src)
+    df <- reshape2::melt(alldf, id.vars = c('site', 'src', 'species', 'year'))
+    df <- reshape2::dcast(df, site + species + year + variable ~ src)
 
   }
 
@@ -80,8 +78,15 @@ evalMetricsCalc <- function(evalSite){
 
   }
 
-  # plot results
-  plotplot(evalSite, msd, df)
+  ##############################################################################
+  # plot
+  ##############################################################################
+
+  # create directory to save plots
+  if (!(dir.exists(paste0('plotEval/', evalSite)))){dir.create(paste0('plotEval/', evalSite), recursive = TRUE)}
+
+  # plot MSD and its 3 components
+  msdPlot(evalSite, msd, groups)
 
   return(1)
 

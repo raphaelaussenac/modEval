@@ -1,3 +1,40 @@
+msdPlot <- function(evalSite, msd, groups){
+
+  # plot mean square deviation
+  msd <- msd[!is.na(msd$SB) & !is.na(msd$NU) & !is.na(msd$LC),]
+  msd <- reshape2::melt(msd, id.vars = c(groups, 'mod'))
+  colnames(msd)[ncol(msd)-1] <- 'devMeasure'
+  # order factor
+  msd$devMeasure <- factor(msd$devMeasure, levels = c('MSD', 'LC', 'NU', 'SB'))
+
+  pl1 <- ggplot(data = msd[msd$devMeasure != 'MSD' & msd$species == 'allsp', ], aes(x = mod, y = value, fill = devMeasure)) +
+    geom_bar(stat = "identity") +
+    # facet_wrap(. ~ variable, scale = "free") +
+    theme_light() +
+    xlab('models') +
+    ylab('mean square deviation') +
+    theme(panel.grid.minor = element_blank(),
+        # panel.grid.major = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_text(colour = 'black'),
+        legend.position = "bottom",
+        legend.title = element_blank(),
+        panel.spacing = unit(20, 'pt'))
+  if(evalSite == 'bauges'){
+    pl1 <- pl1 + facet_wrap(. ~ variable, scale = "free")
+    ggsave(file = paste0('./plotEval/', evalSite, '/msd.pdf'), plot = pl1, width = 10, height = 10)
+  } else if (evalSite == 'profound'){
+    pl1 <- pl1 + facet_grid(variable ~ site, scale = 'free')
+    ggsave(file = paste0('./plotEval/', evalSite, '/msd.pdf'), plot = pl1, width = 8, height = 12)
+  }
+
+}
+
+
+
+
+
+
 
 
 plotplot <- function(evalSite, msd, df){
