@@ -1,3 +1,12 @@
+# common theme features
+theme = theme(panel.grid.minor = element_blank(),
+              strip.background = element_blank(),
+              strip.text = element_text(colour = 'black'),
+              legend.position = "bottom",
+              legend.title = element_blank(),
+              panel.spacing = unit(20, 'pt'))
+#
+
 # plot mean square deviation for each variable at each site
 msdPlot <- function(evalSite, msd, groups){
 
@@ -13,13 +22,7 @@ msdPlot <- function(evalSite, msd, groups){
     theme_light() +
     xlab('models') +
     ylab('mean square deviation') +
-    theme(panel.grid.minor = element_blank(),
-        # panel.grid.major = element_blank(),
-        strip.background = element_blank(),
-        strip.text = element_text(colour = 'black'),
-        legend.position = "bottom",
-        legend.title = element_blank(),
-        panel.spacing = unit(20, 'pt'))
+    theme
   if(evalSite == 'bauges'){
     pl1 <- pl1 + facet_wrap(. ~ variable, scale = "free")
     ggsave(file = paste0('./plotEval/', evalSite, '/msd.pdf'), plot = pl1, width = 10, height = 10)
@@ -48,13 +51,7 @@ msdSpPlot <- function(evalSite, msd, groups, site){
     theme_light() +
     xlab('models') +
     ylab('mean square deviation') +
-    theme(panel.grid.minor = element_blank(),
-        # panel.grid.major = element_blank(),
-        strip.background = element_blank(),
-        strip.text = element_text(colour = 'black'),
-        legend.position = "bottom",
-        legend.title = element_blank(),
-        panel.spacing = unit(20, 'pt'))
+    theme
   ggsave(file = paste0('./plotEval/', evalSite, '/msdSp', site, '.pdf'), plot = pl1, width = 8, height = 12)
 
 }
@@ -75,13 +72,7 @@ tsPlot <- function(evalSite, df){
     geom_line(data = ts[ts$src == 'data' & !is.na(ts$value),], aes(x = year, y = value, col = src)) +
     facet_grid(variable ~ site, scale = "free") +
     theme_light() +
-    theme(panel.grid.minor = element_blank(),
-          # panel.grid.major = element_blank(),
-        strip.background = element_blank(),
-        strip.text = element_text(colour = 'black'),
-        legend.position = "bottom",
-        legend.title=element_blank(),
-        panel.spacing = unit(20, 'pt'))
+    theme
   ggsave(file = paste0('./plotEval/', evalSite, '/ts.pdf'), width = 8, height = 12)
 
 }
@@ -103,13 +94,7 @@ tsSpPlot <- function(evalSite, df, site){
     geom_line(data = ts[ts$src == 'data' & !is.na(ts$value),], aes(x = year, y = value, col = src)) +
     facet_grid(variable ~ species, scale = "free") +
     theme_light() +
-    theme(panel.grid.minor = element_blank(),
-          # panel.grid.major = element_blank(),
-        strip.background = element_blank(),
-        strip.text = element_text(colour = 'black'),
-        legend.position = "bottom",
-        legend.title=element_blank(),
-        panel.spacing = unit(20, 'pt'))
+    theme
   ggsave(file = paste0('./plotEval/', evalSite, '/tsSp', site, '.pdf'), width = 8, height = 12)
 
 }
@@ -132,14 +117,7 @@ diffPlot <- function(evalSite, df, relabsdiff){
     facet_wrap(. ~ variable, scale = "free") +
     theme_light() +
     xlab('models') +
-    # ylab('predictions - observations') +
-    theme(panel.grid.minor = element_blank(),
-        # panel.grid.major = element_blank(),
-        strip.background = element_blank(),
-        strip.text = element_text(colour = 'black'),
-        legend.position = "bottom",
-        legend.title = element_blank(),
-        panel.spacing = unit(20, 'pt'))
+    theme
   if(relabsdiff == 'absDiff'){
     pl1 <- pl1 + ylab('predictions - observations')
   } else if(relabsdiff == 'relDiff'){
@@ -170,13 +148,7 @@ regDiffPlot <- function(evalSite, diff){
   ylab('predictions - observations') +
   xlab('observations') +
   theme_light() +
-  theme(panel.grid.minor = element_blank(),
-      # panel.grid.major = element_blank(),
-      strip.background = element_blank(),
-      strip.text = element_text(colour = 'black'),
-      legend.position = "bottom",
-      legend.title = element_blank(),
-      panel.spacing = unit(20, 'pt'))
+  theme
   ggsave(file = paste0('./plotEval/', evalSite, '/regDiff.pdf'), plot = pl1, width = 10, height = 10)
 
   # plot BAI_yr absolute differences (pred - obs) against all other observed variables
@@ -205,14 +177,8 @@ regDiffPlot <- function(evalSite, diff){
   ylab('BAI_yr predictions - BAI_yr observations') +
   xlab('observations') +
   theme_light() +
-  theme(panel.grid.minor = element_blank(),
-      # panel.grid.major = element_blank(),
-      strip.background = element_blank(),
-      strip.placement = "outside",
-      strip.text = element_text(colour = 'black'),
-      legend.position = "bottom",
-      legend.title = element_blank(),
-      panel.spacing = unit(20, 'pt'))
+  theme(strip.placement = "outside") +
+  theme
   ggsave(file = paste0('./plotEval/', evalSite, '/BAIdiff.pdf'), plot = pl2, width = 10, height = 10)
 
   return(models)
