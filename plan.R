@@ -13,9 +13,9 @@ if (Sys.info()["sysname"] == "Darwin"){
 }
 
 source("R/assembleDataAndSim.R")
-source("R/indexCalc.R")
+source("R/standVarCalc.R")
 source("R/evalPlot.R")
-source('R/HetIndex.R')
+source('R/hetIndex.R')
 
 ################################################################################
 # choose site

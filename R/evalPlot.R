@@ -6,7 +6,7 @@ library(fmsb)
 library(plyr)
 library(viridis)
 source('R/msd.R')
-source('R/evalPlotBauges.R')
+source('R/evalMetricsCalc.R')
 
 WritePlot <- function(evalSite){
 
@@ -17,6 +17,56 @@ WritePlot <- function(evalSite){
 
     alldf <- read.csv(paste0('./data/eval_', evalSite, '.csv'))
     alldf <- alldf[order(alldf$src, alldf$site, alldf$species, alldf$year),]
+
+    # long format
+    df <- melt(alldf, id.vars = c('site', 'src', 'species', 'year'))
+    df <- dcast(df, site + species + year + variable ~ src)
+
+    msd <- data.frame()
+    for (mod in unique(alldf$src)[unique(alldf$src) != 'data']){
+
+      # # calculate absolute and relative difference between observations and predictions
+      # df[, paste0(mod, '_absDiff')] <- df[, mod] - df$data
+      # df[, paste0(mod, '_relDiff')] <- (df[, mod] * 100 / df$data) - 100
+
+      # Calculate MSD and its 3 components
+      # create evaluation data frame
+      evaldf <- df
+      colnames(evaldf)[colnames(evaldf) == 'data'] <- 'Y'
+      colnames(evaldf)[colnames(evaldf) == mod] <- 'X'
+      # calculation
+      msd3 <- calc_msd(evaldf, mod, groups = c('site', 'species', 'variable'))
+      msd <- rbind(msd, msd3)
+
+    }
+
+
+    # plot mean square deviation
+    msd <- melt(msd, id.vars = c('site', 'species', 'variable', 'mod'))
+    colnames(msd)[ncol(msd)-1] <- 'devMeasure'
+    # order factor
+    msd$devMeasure <- factor(msd$devMeasure, levels = c('MSD', 'LC', 'NU', 'SB'))
+
+    pl1 <- ggplot(data = msd[msd$devMeasure != 'MSD' & msd$species == 'allsp', ], aes(x = mod, y = value, fill = devMeasure)) +
+      geom_bar(stat = "identity") +
+      facet_grid(variable ~ site, scale = 'free') +
+      theme_light() +
+      xlab('models') +
+      ylab('mean square deviation') +
+      theme(panel.grid.minor = element_blank(),
+          # panel.grid.major = element_blank(),
+          strip.background = element_blank(),
+          strip.text = element_text(colour = 'black'),
+          legend.position = "bottom",
+          legend.title = element_blank(),
+          panel.spacing = unit(20, 'pt'))
+    # ggsave(file = paste0('./plotEval/', evalSite, '/msd.pdf'), plot = pl1, width = 10, height = 10)
+
+
+
+
+
+
 
   ################################################################################
   # evaluation
