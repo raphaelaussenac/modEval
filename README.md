@@ -9,5 +9,6 @@ Command "clean()" force drake to redo every calculation
  
 
 
-# 
+# Drake
+To visualize the workflow : vis_drake_graph(plan) 
 
