@@ -14,11 +14,14 @@ ChooseVar <- function(dataSet, Nvar = "D_cm", Inter = 10){
     return(dataSet)
 }
 
-CalcDivIndex <- function(dataSet){
+CalcDivIndex <- function(dataSet, type='BA'){
 # dataSet after ChooseVar, return GS : Gini-Simpson, Sh : Shannon, N : Nb for each year
+# type defines whether we use directly frequency or relative BA to compute metrics
     if (is.null(dataSet[["Var"]])){stop('Need to choose variable first')}
-    PClass <- group_by(dataSet, year, site, src) %>% mutate(N = sum(weight)) %>% ungroup() %>%
-	    group_by(year, Class, site, src) %>% dplyr::summarise(p=(sum(weight)/N[1])) %>% ungroup()
+    PClass <- group_by(dataSet, year, site, src) %>% mutate(N = sum(weight), BA=sum(pi*(D_cm/200)^2*weight)) %>%
+      ungroup() %>% group_by(year, Class, site, src) %>% dplyr::summarise(p=(sum(weight)/N[1]),
+      pBA=sum(pi*(D_cm/200)^2*weight)/BA[1]) %>% ungroup()
+    if (type=='BA'){PClass$p <- PClass$pBA}
     HillNB <- group_by(PClass, year, site, src) %>% dplyr::summarise(Sh=-sum(p * log(p)),
 	    N=n(), GS=1-sum(p^2), Simp=sum(p^2)) %>% ungroup()
     GiniIndex <- group_by(dataSet, year, site, src) %>% dplyr::summarise(GI=Gini(Class, weight)) %>% ungroup()
