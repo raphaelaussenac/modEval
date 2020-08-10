@@ -7,7 +7,7 @@ ChooseVar <- function(dataSet, Nvar = "D_cm", Inter = 10){
     if (Nvar %in% c('D_cm','H_m','V_m3')){
 	    dataSet <- mutate(dataSet, Class = (1+floor((Var-Inter/2)/Inter))*Inter)
     }else if (Nvar=='species'){
-	    dataSet <- mutate(dataSet, Class=Var)
+	    dataSet <- mutate(dataSet, Class=as.character(Var))
     }else{
 	    stop('Nvar specified not in output')
     }
@@ -18,14 +18,19 @@ CalcDivIndex <- function(dataSet, type='BA'){
 # dataSet after ChooseVar, return GS : Gini-Simpson, Sh : Shannon, N : Nb for each year
 # type defines whether we use directly frequency or relative BA to compute metrics
     if (is.null(dataSet[["Var"]])){stop('Need to choose variable first')}
-    PClass <- group_by(dataSet, year, site, src) %>% mutate(N = sum(weight), BA=sum(pi*(D_cm/200)^2*weight)) %>%
+    dataSet <- mutate(dataSet, BA=pi*(D_cm/200)^2*weight)
+    PClass <- group_by(dataSet, year, site, src) %>% mutate(N = sum(weight), BAt=sum(BA)) %>%
       ungroup() %>% group_by(year, Class, site, src) %>% dplyr::summarise(p=(sum(weight)/N[1]),
-      pBA=sum(pi*(D_cm/200)^2*weight)/BA[1]) %>% ungroup()
+      pBA=sum(BA)/BAt[1], BAt=BAt[1]) %>% ungroup()
     if (type=='BA'){PClass$p <- PClass$pBA}
     HillNB <- group_by(PClass, year, site, src) %>% dplyr::summarise(Sh=-sum(p * log(p)),
 	    N=n(), GS=1-sum(p^2), Simp=sum(p^2)) %>% ungroup()
-    GiniIndex <- group_by(dataSet, year, site, src) %>% dplyr::summarise(GI=Gini(Class, weight)) %>% ungroup()
-    DivIndex <- left_join(HillNB, GiniIndex, by=c('year','site','src'))
+    if (is.numeric(dataSet$Var)){
+      GiniIndex <- group_by(dataSet, year, site, src) %>% dplyr::summarise(GI=Gini2(Var,BA,weight)) %>% ungroup()
+      DivIndex <- left_join(HillNB, GiniIndex, by=c('year','site','src'))
+    }else{
+      DivIndex <- mutate(DivIndex, GI=NA) 
+    }
     return(DivIndex)
 }
 
@@ -38,7 +43,7 @@ ReturnDivIndex <- function(evalSite, Nvar='D_cm', Inter=10, path='data'){
 }
 
 
-Gini <- function (x, weights = rep(1, length = length(x))){
+GiniOld <- function (x, weights = rep(1, length = length(x))){
     ox <- order(x)
     x <- x[ox]
     weights <- weights[ox]/sum(weights)
@@ -47,6 +52,17 @@ Gini <- function (x, weights = rep(1, length = length(x))){
     n <- length(nu)
     nu <- nu/nu[n]
     sum(nu[-1] * p[-n]) - sum(nu[-n] * p[-1])
+}
+
+Gini <- function (x, BA = rep(1, length = length(x)), weight = rep(1, length = length(x))){
+	# Taken from Bourdier et al, 2016
+    ox <- order(x)
+    x <- x[ox]
+    BA <- BA[ox]
+    weight <- weight[ox]
+    ind <- cumsum(weight)
+    N <- sum(weight)
+    2 * sum(ind * BA) / (sum(BA) * N) - (N+1)/N
 }
 
 Example <- function(){
