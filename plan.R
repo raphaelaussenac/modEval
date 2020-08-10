@@ -12,15 +12,26 @@ if (Sys.info()["sysname"] == "Darwin"){
   setwd("C:/Users/raphael.aussenac/Documents/GitHub/modEval")
 }
 
+# source
 source("R/assembleDataAndSim.R")
-source("R/indexCalc.R")
-source("R/evalPlot.R")
-source('R/HetIndex.R')
+source("R/standVarCalc.R")
+source("R/evalMetricsCalc.R")
+source('R/hetIndex.R')
+source('R/msd.R')
+source('R/plot.R')
+
+################################################################################
+# choose site
+################################################################################
+
+evalSite <- 'bauges'
+
+################################################################################
+################################################################################
+################################################################################
+
 plan <- drake_plan(
-    IsDataFileProfound = WriteDataSim('profound'),
-    IsDataIndexProfound = WriteIndex('profound'),
-    IsFiguresProfound = WritePlot('profound')
-
+    IsDataFileProfound = dataAndSim(evalSite),
+    IsDataIndexProfound = standVarCalc(evalSite),
+    IsFiguresProfound = evalMetricsCalc(evalSite)
 )
-
-                                                                     

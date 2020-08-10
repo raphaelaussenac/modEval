@@ -12,24 +12,19 @@ if (Sys.info()["sysname"] == "Darwin"){
   setwd("C:/Users/raphael.aussenac/Documents/GitHub/modEval")
 }
 
-################################################################################
-################################################################################
-################################################################################
-
-# choose evaluation site (profound / bauges)
-evalSite <- 'profound'
-
-################################################################################
-################################################################################
-################################################################################
+# source
+source("R/assembleDataAndSim.R")
+source("R/standVarCalc.R")
+source("R/evalMetricsCalc.R")
+source('R/hetIndex.R')
+source('R/msd.R')
+source('R/plot.R')
 
 # assemble data and simulations
-source("./R/assembleDataAndSim.R")
+dataAndSim('bauges')
 
 # calculate index (N, Dg, BAI, GINI ...)
-rm(list=setdiff(ls(), "evalSite"))
-source("./R/indexCalc.R")
+standVarCalc('bauges')
 
 # evaluation and plots
-rm(list=setdiff(ls(), "evalSite"))
-source("./R/evalPlot.R")
+evalMetricsCalc('bauges')
