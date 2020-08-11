@@ -145,10 +145,14 @@ regDiffPlot <- function(evalSite, diff, relabsdiff){
   geom_point(alpha = 0.5) +
   facet_wrap(. ~ variable, scale = "free") +
   geom_smooth(method = 'lm', formula = y ~ x) +
-  ylab('predictions - observations') +
   xlab('observations') +
   theme_light() +
   theme
+  if (relabsdiff == 'absDiff'){
+    pl1 <- pl1 + ylab('predictions - observations')
+  } else if (relabsdiff == 'relDiff'){
+    pl1 <- pl1 + ylab('(predictions * 100 / observations) - 100')
+  }
   ggsave(file = paste0('./plotEval/', evalSite, '/reg', relabsdiff,'.pdf'), plot = pl1, width = 10, height = 10)
 
   # plot BAI_yr absolute differences (pred - obs) against all other observed variables
@@ -184,11 +188,15 @@ regDiffPlot <- function(evalSite, diff, relabsdiff){
   geom_text(data = models[models$mod == 'salem',], aes(x = Inf, y = Inf, label = paste('r2=',round(r.squared, 3))), hjust = 1, vjust = 1) +
   facet_wrap(. ~ variable, scale = "free", strip.position = "bottom") +
   geom_smooth(method = 'lm', formula = y ~ x) +
-  ylab('BAI_yr predictions - BAI_yr observations') +
   xlab('observations') +
   theme_light() +
   theme(strip.placement = "outside") +
   theme
+  if (relabsdiff == 'absDiff'){
+    pl2 <- pl2 + ylab('predictions - observations')
+  } else if (relabsdiff == 'relDiff'){
+    pl2 <- pl2 + ylab('(predictions * 100 / observations) - 100')
+  }
   ggsave(file = paste0('./plotEval/', evalSite, '/BAI', relabsdiff,'.pdf'), plot = pl2, width = 10, height = 10)
 
   return(models)
