@@ -26,10 +26,10 @@ CalcDivIndex <- function(dataSet, type='BA'){
     HillNB <- group_by(PClass, year, site, src) %>% dplyr::summarise(Sh=-sum(p * log(p)),
 	    N=n(), GS=1-sum(p^2), Simp=sum(p^2)) %>% ungroup()
     if (is.numeric(dataSet$Var)){
-      GiniIndex <- group_by(dataSet, year, site, src) %>% dplyr::summarise(GI=Gini2(Var,BA,weight)) %>% ungroup()
+      GiniIndex <- group_by(dataSet, year, site, src) %>% dplyr::summarise(GI=Gini(Var,BA,weight)) %>% ungroup()
       DivIndex <- left_join(HillNB, GiniIndex, by=c('year','site','src'))
     }else{
-      DivIndex <- mutate(DivIndex, GI=NA) 
+      DivIndex <- mutate(HillNB, GI=NA) 
     }
     return(DivIndex)
 }
@@ -54,15 +54,21 @@ GiniOld <- function (x, weights = rep(1, length = length(x))){
     sum(nu[-1] * p[-n]) - sum(nu[-n] * p[-1])
 }
 
-Gini <- function (x, BA = rep(1, length = length(x)), weight = rep(1, length = length(x))){
-	# Taken from Bourdier et al, 2016
-    ox <- order(x)
-    x <- x[ox]
-    BA <- BA[ox]
-    weight <- weight[ox]
-    ind <- cumsum(weight)
-    N <- sum(weight)
-    2 * sum(ind * BA) / (sum(BA) * N) - (N+1)/N
+Gini <- function (V, BA = rep(1, length = length(x)), weight = rep(1, length = length(x))){
+    oV <- order(V)
+    V <- V[oV]
+    BA <- BA[oV]
+    weight <- weight[oV]
+    ## Lorenz Curve
+    x <- cumsum(weight)/sum(weight) # CDF share of pop
+    y <- cumsum(BA)/sum(BA) # CDF share of  BA
+    if (length(x)==1){
+      dx <- 0
+    }else{
+      dx <- diff(x)
+    }
+    A <- sum(c(x[1],dx)*(y+c(0,y[1:(length(y)-1)]))/2) # Area under the Lorenz Curve
+    return(1-2*A)
 }
 
 Example <- function(){
