@@ -42,18 +42,6 @@ ReturnDivIndex <- function(evalSite, Nvar='D_cm', Inter=10, path='data'){
     return(as.data.frame(DivIndex))
 }
 
-
-GiniOld <- function (x, weights = rep(1, length = length(x))){
-    ox <- order(x)
-    x <- x[ox]
-    weights <- weights[ox]/sum(weights)
-    p <- cumsum(weights)
-    nu <- cumsum(weights * x)
-    n <- length(nu)
-    nu <- nu/nu[n]
-    sum(nu[-1] * p[-n]) - sum(nu[-n] * p[-1])
-}
-
 Gini <- function (V, BA = rep(1, length = length(x)), weight = rep(1, length = length(x))){
     oV <- order(V)
     V <- V[oV]
@@ -71,30 +59,4 @@ Gini <- function (V, BA = rep(1, length = length(x)), weight = rep(1, length = l
     return(1-2*A)
 }
 
-Example <- function(){
-	require(ggplot2)
-    Nvar <- "D_cm"
-    Inter <- 10
-    model <- c('profound', '4c', 'landclim', 'salem')
-    site <- c('kroof','solling-spruce', 'solling-beech')
-    OUT <- ReturnHill(Nvar, model, site, Inter)
-    ggplot(OUT, aes(x=year, y=Sh, col=model)) + geom_line() +
-        facet_wrap(~site) + ggtitle(paste(Nvar,"Shannon"))
-}
 
-ReturnHillOld <- function(Nvar='D_cm', model='4c', site='kroof', Inter=10, path='.'){ # Former dataset  implementation, kept for security
-	# model and site can be list, Nvar cannot
-    listfiles <- intersect(list.files(path=path, pattern=paste(model,collapse='|')),
-        list.files(path=path, pattern=paste(site,collapse='|')))
-        if (length(listfiles) == 0){
-          stop('no files found in directory')
-        }
-    Hill <- NULL
-    for (ifile in listfiles){
-         dataTemp <- read.csv(file=paste(path,ifile,sep=.Platform$file.sep))
-         dataTemp <- ChooseVar(dataTemp, Nvar=Nvar, Inter=Inter)
-	 Hill <- rbind(Hill,mutate(CalcHill(dataTemp), model=strsplit(ifile,'_')[[1]][1],
-	   site=strsplit(ifile,'_')[[1]][2], Inter=Inter, Nvar=Nvar))
-    }
-    return(Hill)
-}
