@@ -131,17 +131,17 @@ diffPlot <- function(evalSite, df, relabsdiff){
 
 # plot regression diff = f(environmental and stand features)
 # and return models specifications
-regDiffPlot <- function(evalSite, diff){
+regDiffPlot <- function(evalSite, diff, relabsdiff){
 
   # requires 'diff' dataframe from 'diffPlot' function
   reg <- reshape2::dcast(diff, site + species + variable + mod ~ diff)
   reg <- reg[reg$mod != 'data',]
   colnames(reg)[colnames(reg) == 'obsPred'] <- 'pred'
-  reg[, c('relDiff')] <- NULL
   reg <- merge(reg, diff[diff$mod == 'data',c('site', 'species', 'variable', 'value')], by = c('site', 'species', 'variable'))
   colnames(reg)[length(colnames(reg))] <- 'obs'
+  colnames(reg)[colnames(reg) == relabsdiff] <- 'Y'
 
-  pl1 <- ggplot(data = reg[reg$species == 'allsp',], aes(x = obs, y = absDiff, col = mod)) +
+  pl1 <- ggplot(data = reg[reg$species == 'allsp',], aes(x = obs, y = Y, col = mod)) +
   geom_point(alpha = 0.5) +
   facet_wrap(. ~ variable, scale = "free") +
   geom_smooth(method = 'lm', formula = y ~ x) +
@@ -149,12 +149,11 @@ regDiffPlot <- function(evalSite, diff){
   xlab('observations') +
   theme_light() +
   theme
-  ggsave(file = paste0('./plotEval/', evalSite, '/regDiff.pdf'), plot = pl1, width = 10, height = 10)
+  ggsave(file = paste0('./plotEval/', evalSite, '/reg', relabsdiff,'.pdf'), plot = pl1, width = 10, height = 10)
 
   # plot BAI_yr absolute differences (pred - obs) against all other observed variables
-  # TODO: add environmental varibales
-  BAI <- reg[reg$variable == 'BAI_yr', c('site', 'species', 'mod', 'absDiff'),]
-  colnames(BAI)[ncol(BAI)] <- 'absDiffBAI_yr'
+  BAI <- reg[reg$variable == 'BAI_yr', c('site', 'species', 'mod', 'Y'),]
+  colnames(BAI)[ncol(BAI)] <- 'DiffBAI_yr'
   temp <- reg[, c('site', 'species', 'variable', 'obs'),]
   temp <- temp[!duplicated(temp),]
   temp <- reshape2::dcast(temp, site + species ~ variable)
@@ -171,15 +170,15 @@ regDiffPlot <- function(evalSite, diff){
   BAIdiff <- merge(BAI, temp, by  = c('site', 'species'))
 
   # lm for BAI_absolute_diffrence ~ all variables
-  modeldf <- BAIdiff[BAIdiff$species == 'allsp' & !is.na(BAIdiff$obs) & !is.na(BAIdiff$absDiffBAI_yr),] %>% group_by(variable, mod)
+  modeldf <- BAIdiff[BAIdiff$species == 'allsp' & !is.na(BAIdiff$obs) & !is.na(BAIdiff$DiffBAI_yr),] %>% group_by(variable, mod)
   models <- do(modeldf,
       glance( # replace glance by tidy to get models parameter estimates
-        lm(absDiffBAI_yr ~ obs, data = .)))
+        lm(DiffBAI_yr ~ obs, data = .)))
   models <- data.frame(models)
   # add models output to BAIdiff
   BAIdiff <- merge(BAIdiff, models[, c('variable', 'mod', 'r.squared')], by = c('variable', 'mod'), all.x = TRUE)
 
-  pl2 <- ggplot(data = BAIdiff[BAIdiff$species == 'allsp',], aes(x = obs, y = absDiffBAI_yr, col = mod)) +
+  pl2 <- ggplot(data = BAIdiff[BAIdiff$species == 'allsp',], aes(x = obs, y = DiffBAI_yr, col = mod)) +
   geom_point(alpha = 0.5) +
   geom_text(data = models[models$mod == 'landclim',], aes(x = -Inf, y = Inf, label = paste('r2=',round(r.squared, 3))), hjust = 0, vjust = 1) +
   geom_text(data = models[models$mod == 'salem',], aes(x = Inf, y = Inf, label = paste('r2=',round(r.squared, 3))), hjust = 1, vjust = 1) +
@@ -190,7 +189,7 @@ regDiffPlot <- function(evalSite, diff){
   theme_light() +
   theme(strip.placement = "outside") +
   theme
-  ggsave(file = paste0('./plotEval/', evalSite, '/BAIdiff.pdf'), plot = pl2, width = 10, height = 10)
+  ggsave(file = paste0('./plotEval/', evalSite, '/BAI', relabsdiff,'.pdf'), plot = pl2, width = 10, height = 10)
 
   return(models)
 

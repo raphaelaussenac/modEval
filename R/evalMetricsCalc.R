@@ -98,7 +98,8 @@ evalMetricsCalc <- function(evalSite){
   if (evalSite == 'bauges'){
     diff <- diffPlot(evalSite, df, 'absDiff')
     diffPlot(evalSite, df, 'relDiff')
-    models <- regDiffPlot(evalSite, diff)
+    models <- regDiffPlot(evalSite, diff, 'absDiff')
+    regDiffPlot(evalSite, diff, 'relDiff')
     return(models)
   }
 
