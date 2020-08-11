@@ -108,14 +108,20 @@ standVarCalc <- function(evalSite){
 # calculate heterogeneity index at stand level
 ################################################################################
 
-  Nvar <- "D_cm"
-  Inter <- 10
-  out <- ReturnDivIndex(evalSite, Nvar, Inter)
+  # diameter class diversity
+  out <- ReturnDivIndex(evalSite, "D_cm", 10)
   out <- data.frame(out)
   out[, c('N', 'Inter', 'Nvar')] <- NULL
 
+  # species diversity
+  divOut <- ReturnDivIndex(evalSite, "species")
+  divOut <- data.frame(divOut)
+  divOut[, c('N', 'GI')] <- NULL
+  colnames(divOut)[!(colnames(divOut) %in% c('year', 'site', 'src'))] <- paste0(colnames(divOut)[!(colnames(divOut) %in% c('year', 'site', 'src'))], 'sp')
+
 # add heterogeneity index to df
   sp <- merge(sp, out, by= c('year', 'src', 'site'))
+  sp <- merge(sp, divOut, by = c('year', 'src', 'site'))
 
 # write site index
   write.csv(sp, paste0('./data/eval_', evalSite, '.csv'), row.names = FALSE)
