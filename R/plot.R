@@ -157,6 +157,17 @@ regDiffPlot <- function(evalSite, diff){
   colnames(BAI)[ncol(BAI)] <- 'absDiffBAI_yr'
   temp <- reg[, c('site', 'species', 'variable', 'obs'),]
   temp <- temp[!duplicated(temp),]
+  temp <- reshape2::dcast(temp, site + species ~ variable)
+  # import environmental variables
+  env <- read.csv('./data/obsAndSim/bauges/BaugesStand_20191213.csv', sep = ';')
+  env <- env[, c('id_plot', 'elevation', 'pH', 'slope', 'expo', 'swhc', 'CN_ratio', 'humus')]
+  # convert expo in expoNS and expoEW
+  env$expo <- env$expo * 0.9 # from grade to degree
+  env$expoNS <- cos(env$expo*pi/180)
+  env$expoEW <- sin(env$expo*pi/180)
+  temp <- merge(temp, env, by.x = 'site', by.y = 'id_plot')
+  temp <- reshape2::melt(temp, id.vars = c('site', 'species'))
+  colnames(temp)[ncol(temp)] <- 'obs'
   BAIdiff <- merge(BAI, temp, by  = c('site', 'species'))
 
   # lm for BAI_absolute_diffrence ~ all variables
@@ -170,8 +181,8 @@ regDiffPlot <- function(evalSite, diff){
 
   pl2 <- ggplot(data = BAIdiff[BAIdiff$species == 'allsp',], aes(x = obs, y = absDiffBAI_yr, col = mod)) +
   geom_point(alpha = 0.5) +
-  geom_text(data = models[models$mod == 'landclim',], aes(x = -Inf, y = Inf, label = paste('R²=',round(r.squared, 3))), hjust = 0, vjust = 1) +
-  geom_text(data = models[models$mod == 'salem',], aes(x = Inf, y = Inf, label = paste('R²=',round(r.squared, 3))), hjust = 1, vjust = 1) +
+  geom_text(data = models[models$mod == 'landclim',], aes(x = -Inf, y = Inf, label = paste('r2=',round(r.squared, 3))), hjust = 0, vjust = 1) +
+  geom_text(data = models[models$mod == 'salem',], aes(x = Inf, y = Inf, label = paste('r2=',round(r.squared, 3))), hjust = 1, vjust = 1) +
   facet_wrap(. ~ variable, scale = "free", strip.position = "bottom") +
   geom_smooth(method = 'lm', formula = y ~ x) +
   ylab('BAI_yr predictions - BAI_yr observations') +
