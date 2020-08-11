@@ -25,12 +25,12 @@ CalcDivIndex <- function(dataSet, type='BA'){
     if (type=='BA'){PClass$p <- PClass$pBA}
     HillNB <- group_by(PClass, year, site, src) %>% dplyr::summarise(Sh=-sum(p * log(p)),
 	    N=n(), GS=1-sum(p^2), Simp=sum(p^2)) %>% ungroup()
-    if (is.numeric(dataSet$Var)){
-      GiniIndex <- group_by(dataSet, year, site, src) %>% dplyr::summarise(GI=Gini2(Var,BA,weight)) %>% ungroup()
-      DivIndex <- left_join(HillNB, GiniIndex, by=c('year','site','src'))
-    }else{
-      DivIndex <- mutate(DivIndex, GI=NA) 
-    }
+    # if (is.numeric(dataSet$Var)){
+    #   GiniIndex <- group_by(dataSet, year, site, src) %>% dplyr::summarise(GI=Gini2(Var,BA,weight)) %>% ungroup()
+    #   DivIndex <- left_join(HillNB, GiniIndex, by=c('year','site','src'))
+    # }else{
+      DivIndex <- mutate(HillNB, GI=NA)
+    # }
     return(DivIndex)
 }
 
