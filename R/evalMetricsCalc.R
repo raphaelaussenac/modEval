@@ -83,6 +83,9 @@ evalMetricsCalc <- function(evalSite){
   # plot MSD and its 3 components
   msdPlot(evalSite, msd, groups)
 
+  # plot observations vs predictions
+  obsPred(evalSite, df, alldf)
+
   # plot msd radarchart
   msdRadarPlot(evalSite, msd)
 

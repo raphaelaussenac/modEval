@@ -100,6 +100,49 @@ tsSpPlot <- function(evalSite, df, site){
 }
 
 
+# plot observations vs predictions
+obsPred <- function(evalSite, df, alldf){
+
+  obsPred <- df[df$species == 'allsp',]
+  obsPred$year <- NULL
+  obsPred <- melt(obsPred, id.vars = c('site', 'species', 'variable', 'data'))
+  colnames(obsPred)[ncol(obsPred)-1] <- 'mod'
+  obsPred <- obsPred[obsPred$mod %in% unique(alldf$src), ]
+  if(evalSite == 'bauges'){
+    obsPred$site <- 'bauges'
+  }
+
+  modeldf <- obsPred %>% group_by(site, variable, mod)
+  modeldf <- modeldf[!is.na(modeldf$value) & !is.na(modeldf$data),]
+  models <- do(modeldf,
+      glance( # replace glance by tidy to get models parameter estimates
+        lm(data ~ value, data = .)))
+  models <- data.frame(models)
+
+  # one plot for each site
+  makePlot <- function(site){
+    pl1 <- ggplot(data = obsPred[obsPred$site == site, ], aes(x = value, y = data, col = mod)) +
+      geom_point(alpha = 0.5) +
+      geom_smooth(method = 'lm', formula = y ~ x) +
+      geom_abline(slope = 1, intercept = 0, lwd = 1) +
+      geom_text(data = models[models$mod == 'landclim' & models$site == site,], aes(x = -Inf, y = Inf, label = paste('r2=',round(r.squared, 3))), hjust = 0, vjust = 1) +
+      geom_text(data = models[models$mod == 'salem' & models$site == site,], aes(x = Inf, y = Inf, label = paste('r2=',round(r.squared, 3))), hjust = 1, vjust = 1) +
+      facet_wrap(. ~ variable, scale = "free") +
+      theme_light() +
+      ylab('observations') +
+      xlab('predictions') +
+      theme
+    if(evalSite == 'profound'){
+      pl1 <- pl1 + geom_text(data = models[models$mod == '4c' & models$site == site,], aes(x = -Inf, y = -Inf, label = paste('r2=',round(r.squared, 3))), hjust = 0, vjust = -1)
+      ggsave(file = paste0('./plotEval/', evalSite, '/obsPred', site, '.pdf'), plot = pl1, width = 10, height = 10)
+    } else if(evalSite == 'bauges'){
+      ggsave(file = paste0('./plotEval/', evalSite, '/obsPred.pdf'), plot = pl1, width = 10, height = 10)
+    }
+  }
+  lapply(unique(obsPred$site), makePlot)
+
+}
+
 # plot absolute and relative difference between observations and predictions
 diffPlot <- function(evalSite, df, relabsdiff){
 
