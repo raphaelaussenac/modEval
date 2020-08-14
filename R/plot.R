@@ -211,7 +211,27 @@ regDiffPlot <- function(evalSite, diff, relabsdiff){
   env$expo <- env$expo * 0.9 # from grade to degree
   env$expoNS <- cos(env$expo*pi/180)
   env$expoEW <- sin(env$expo*pi/180)
+  # import climate climate data
+  # climate files
+  climFiles <- Sys.glob('./data/obsAndSim/bauges/bauges_4c_cli/*')
+  # calculate Tmean and Prec for each site
+  extractClim <- function(site){
+    clim <- read.csv(site, sep = " ", skip = 3, header = FALSE)
+    clim <- clim[, -which(is.na(clim[1,]))]
+    colnames(clim) <- c("day", "month", "year", "temp", "hum", "prec", "rad", "wind", "tmax", "tmin")
+    # Select years with 12 months of data
+    clim <- clim %>% group_by(year) %>% add_tally() %>% filter(n >= 365) %>% dplyr::select(-all_of("n")) %>% ungroup()
+    # calculate Tmean and Prec
+    clim <- clim %>% summarise(tmean = mean(temp, na.rm = TRUE), prec = sum(prec, na.rm = TRUE))
+    clim$site <- substr(site, str_locate(site, 'bauges\\_[:digit:][:digit:]')[2]-1, str_locate(site, '\\.cli')[1]-1)
+
+    return(clim)
+  }
+  clim <- do.call(rbind, lapply(climFiles, extractClim))
+
+  # merge stand site and climate data
   temp <- merge(temp, env, by.x = 'site', by.y = 'id_plot')
+  temp <- merge(temp, clim, by = 'site')
   temp <- reshape2::melt(temp, id.vars = c('site', 'species'))
   colnames(temp)[ncol(temp)] <- 'obs'
   BAIdiff <- merge(BAI, temp, by  = c('site', 'species'))
@@ -236,9 +256,9 @@ regDiffPlot <- function(evalSite, diff, relabsdiff){
   theme(strip.placement = "outside") +
   theme
   if (relabsdiff == 'absDiff'){
-    pl2 <- pl2 + ylab('predictions - observations')
+    pl2 <- pl2 + ylab('BAI_yr predictions - BAI_yr observations')
   } else if (relabsdiff == 'relDiff'){
-    pl2 <- pl2 + ylab('(predictions * 100 / observations) - 100')
+    pl2 <- pl2 + ylab('(BAI_yr predictions * 100 / BAI_yr observations) - 100')
   }
   ggsave(file = paste0('./plotEval/', evalSite, '/BAI', relabsdiff,'.pdf'), plot = pl2, width = 10, height = 10)
 
@@ -276,6 +296,7 @@ msdRadarPlot <- function(evalSite, msd){
   colors_border = viridis_pal(alpha = 1, option = 'viridis')(100)[c(1, 50, 100)]
   colors_in = viridis_pal(alpha = 0.5, option = 'viridis')(100)[c(1, 50, 100)]
 
+  # one radar plot for each site
   for (i in unique(relativeMSD$site)){
     df <- relativeMSD[relativeMSD$site == i, ]
     rownames(df) <- df$mod
@@ -305,6 +326,5 @@ msdRadarPlot <- function(evalSite, msd){
 
 # dev.copy2pdf(file = paste0('./plotEval/radar.pdf'), width = 13, height = 5)
   dev.off()
-
 
 }
