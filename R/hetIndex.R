@@ -19,6 +19,13 @@ CalcDivIndex <- function(dataSet, type='BA'){
 # type defines whether we use directly frequency or relative BA to compute metrics
     if (is.null(dataSet[["Var"]])){stop('Need to choose variable first')}
     dataSet <- mutate(dataSet, BA=pi*(D_cm/200)^2*weight)
+    SkewNess <- group_by(dataSet, year, site, src) %>%
+      summarise(Dmean=sum(weight*D_cm)/sum(weight),
+      sdD=sqrt(1/sum(weight) * sum((D_cm-Dmean)^2 * weight)),
+      SkewD=1/sum(weight) * sum(weight * ((D_cm-Dmean)/sdD)^3)) %>% ungroup()
+    ###
+    SkewNess <- dplyr::select(SkewNess,-Dmean, -sdD)
+    ###
     PClass <- group_by(dataSet, year, site, src) %>% mutate(N = sum(weight), BAt=sum(BA)) %>%
       ungroup() %>% group_by(year, Class, site, src) %>% dplyr::summarise(p=(sum(weight)/N[1]),
       pBA=sum(BA)/BAt[1], BAt=BAt[1]) %>% ungroup()
@@ -31,6 +38,7 @@ CalcDivIndex <- function(dataSet, type='BA'){
     }else{
       DivIndex <- mutate(HillNB, GI=NA) 
     }
+    DivIndex <- left_join(DivIndex, SkewNess, by=c('site','year','src'))
     return(DivIndex)
 }
 
