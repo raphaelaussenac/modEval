@@ -111,12 +111,12 @@ standVarCalc <- function(evalSite){
   # diameter class diversity
   out <- ReturnDivIndex(evalSite, "D_cm", 10)
   out <- data.frame(out)
-  out <- out[, c('year', 'site', 'src', 'Sh', 'GS', 'Simp', 'GI')]
+  out <- out[, c('year', 'site', 'src', 'Sh', 'GS', 'GI', 'SkewD')]
 
   # species diversity
   divOut <- ReturnDivIndex(evalSite, "species")
   divOut <- data.frame(divOut)
-  divOut <- divOut[, c('year', 'site', 'src', 'Sh', 'GS', 'Simp')]
+  divOut <- divOut[, c('year', 'site', 'src', 'Sh', 'GS')]
   colnames(divOut)[!(colnames(divOut) %in% c('year', 'site', 'src'))] <- paste0(colnames(divOut)[!(colnames(divOut) %in% c('year', 'site', 'src'))], 'sp')
 
 # add heterogeneity index to df

@@ -229,7 +229,7 @@ regDiffPlot <- function(evalSite, diff, relabsdiff){
   }
   clim <- do.call(rbind, lapply(climFiles, extractClim))
 
-  # merge stand site and climate data
+  # merge stand, site and climate data
   temp <- merge(temp, env, by.x = 'site', by.y = 'id_plot')
   temp <- merge(temp, clim, by = 'site')
   temp <- reshape2::melt(temp, id.vars = c('site', 'species'))

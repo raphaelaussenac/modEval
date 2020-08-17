@@ -40,7 +40,7 @@ evalMetricsCalc <- function(evalSite){
   }
 
   # sort factor
-  df$variable <- factor(df$variable, levels = c('N', 'Dg', 'BA', 'H', 'BAI_yr', 'Sh', 'GS', 'Simp', 'GI', 'V', 'Shsp', 'GSsp', 'Simpsp'))
+  df$variable <- factor(df$variable, levels = c('N', 'Dg', 'BA', 'H', 'V', 'BAI_yr', 'Sh', 'GS', 'Simp', 'GI', 'SkewD', 'Shsp', 'GSsp', 'Simpsp'))
 
   ##############################################################################
   # calculate evaluation metrics
