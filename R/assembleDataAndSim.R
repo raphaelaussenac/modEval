@@ -1,7 +1,3 @@
-# library
-library(plyr)
-library(data.table)
-
 dataAndSim <- function(evalSite){
 # retrieve list of file (simulations and observations)
   path <- paste0('./data/obsAndSim/', evalSite, '/')
