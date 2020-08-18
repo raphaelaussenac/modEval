@@ -16,16 +16,10 @@ evalMetricsCalc <- function(evalSite){
   alldf <- read.csv(paste0('./data/eval_', evalSite, '.csv'))
   alldf <- alldf[order(alldf$src, alldf$site, alldf$species, alldf$year),]
 
-  # verify whether mortality is switched off
-  # diffTree <- ddply(alldf[alldf$species == "allsp" & alldf$src == 'data',], .(site), summarise, diffNbTree = min(N) - max(N))
-  # table(diffTree$diffNbTree)
-
   # keep only index associated to last growth year at bauges sites
   if(evalSite == 'bauges'){
-    lastYear <- ddply(alldf, .(site), summarise, lastYear = max(year))
-    alldf <- merge(alldf, lastYear, by = 'site')
-    alldf <- alldf[alldf$year == alldf$lastYear,]
-    alldf[, c('lastYear', 'year')] <- NULL
+
+    alldf <- alldf %>% group_by(site) %>% filter(year >= max(year)) %>% ungroup() %>% select(-year)
 
     # long format
     df <- reshape2::melt(alldf, id.vars = c('site', 'src', 'species'))

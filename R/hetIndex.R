@@ -20,7 +20,7 @@ CalcDivIndex <- function(dataSet, type='BA'){
     if (is.null(dataSet[["Var"]])){stop('Need to choose variable first')}
     dataSet <- mutate(dataSet, BA=pi*(D_cm/200)^2*weight)
     SkewNess <- group_by(dataSet, year, site, src) %>%
-      summarise(Dmean=sum(weight*D_cm)/sum(weight),
+      dplyr::summarise(Dmean=sum(weight*D_cm)/sum(weight),
       sdD=sqrt(1/sum(weight) * sum((D_cm-Dmean)^2 * weight)),
       SkewD=1/sum(weight) * sum(weight * ((D_cm-Dmean)/sdD)^3)) %>% ungroup()
     ###
@@ -36,7 +36,7 @@ CalcDivIndex <- function(dataSet, type='BA'){
       GiniIndex <- group_by(dataSet, year, site, src) %>% dplyr::summarise(GI=Gini(Var,BA,weight)) %>% ungroup()
       DivIndex <- left_join(HillNB, GiniIndex, by=c('year','site','src'))
     }else{
-      DivIndex <- mutate(HillNB, GI=NA) 
+      DivIndex <- mutate(HillNB, GI=NA)
     }
     DivIndex <- left_join(DivIndex, SkewNess, by=c('site','year','src'))
     return(DivIndex)
@@ -66,5 +66,3 @@ Gini <- function (V, BA = rep(1, length = length(x)), weight = rep(1, length = l
     A <- sum(c(x[1],dx)*(y+c(0,y[1:(length(y)-1)]))/2) # Area under the Lorenz Curve
     return(1-2*A)
 }
-
-
