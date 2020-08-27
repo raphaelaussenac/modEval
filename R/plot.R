@@ -213,12 +213,12 @@ regDiffPlot <- function(evalSite, diff, relabsdiff){
   env$expoEW <- sin(env$expo*pi/180)
   # import climate climate data
   # climate files
-  climFiles <- Sys.glob('./data/obsAndSim/bauges/bauges_4c_cli/*')
+  climFiles <- Sys.glob('./data/obsAndSim/bauges/bauges_4c_cli_new/*')
   # calculate Tmean and Prec for each site
   extractClim <- function(site){
     clim <- read.csv(site, sep = " ", skip = 3, header = FALSE)
     clim <- clim[, -which(is.na(clim[1,]))]
-    colnames(clim) <- c("day", "month", "year", "temp", "hum", "prec", "rad", "wind", "tmax", "tmin")
+    colnames(clim) <- c("day", "month", "year", "temp", "hum", "prec", "press", "rad", "wind", "tmax", "tmin")
     # Select years with 12 months of data
     clim <- clim %>% group_by(year) %>% add_tally() %>% filter(n >= 365) %>% dplyr::select(-all_of("n")) %>% ungroup()
     # calculate Tmean and Prec

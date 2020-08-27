@@ -4,4 +4,4 @@
 all_*.csv
 eval_*.csv
 notes.R
-bauges_4c_cli
+bauges_4c_cli*
