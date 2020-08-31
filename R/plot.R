@@ -112,6 +112,13 @@ obsPred <- function(evalSite, df, alldf){
     obsPred$site <- 'bauges'
   }
 
+  # add transparent points to the plot with min and max values of X and Y
+  # for the coordinates of Y and X to be equal
+  obsPred <- obsPred %>% group_by(site, species, variable) %>%
+                                    mutate(maxLim = max(data, value, na.rm = TRUE),
+                                           minLim = min(data, value, na.rm = TRUE)) %>%
+                                    ungroup()
+
   modeldf <- obsPred %>% group_by(site, variable, mod)
   modeldf <- modeldf[!is.na(modeldf$value) & !is.na(modeldf$data),]
   models <- do(modeldf,
@@ -123,6 +130,8 @@ obsPred <- function(evalSite, df, alldf){
   makePlot <- function(site){
     pl1 <- ggplot(data = obsPred[obsPred$site == site, ], aes(x = value, y = data, col = mod)) +
       geom_point(alpha = 0.5) +
+      geom_point(data = obsPred[obsPred$site == site, ], aes(x = maxLim, y = minLim), alpha = 0) +
+      geom_point(data = obsPred[obsPred$site == site, ], aes(x = minLim, y = maxLim), alpha = 0) +
       geom_smooth(method = 'lm', formula = y ~ x) +
       geom_abline(slope = 1, intercept = 0, lwd = 1) +
       geom_text(data = models[models$mod == 'landclim' & models$site == site,], aes(x = -Inf, y = Inf, label = paste('r2=',round(r.squared, 3))), hjust = 0, vjust = 1) +
@@ -131,6 +140,7 @@ obsPred <- function(evalSite, df, alldf){
       theme_light() +
       ylab('observations') +
       xlab('predictions') +
+      theme(aspect.ratio = 1) +
       theme
     if(evalSite == 'profound'){
       pl1 <- pl1 + geom_text(data = models[models$mod == '4c' & models$site == site,], aes(x = -Inf, y = -Inf, label = paste('r2=',round(r.squared, 3))), hjust = 0, vjust = -1)
