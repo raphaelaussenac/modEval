@@ -1,3 +1,6 @@
+# clean up environment
+rm(list = ls())
+
 library(drake)
 library(ggplot2)
 library(reshape2)

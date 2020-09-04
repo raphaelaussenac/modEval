@@ -42,12 +42,10 @@ evalMetricsCalc <- function(evalSite){
   msd <- data.frame()
   for (mod in unique(alldf$src)[unique(alldf$src) != 'data']){
 
-    # at bauges site calculate absolute and relative difference between
+    # calculate absolute and relative difference between
     # observations and predictions
-    if(evalSite == 'bauges'){
-      df[, paste0(mod, '_absDiff')] <- df[, mod] - df$data
-      df[, paste0(mod, '_relDiff')] <- (df[, mod] * 100 / df$data) - 100
-    }
+    df[, paste0(mod, '_absDiff')] <- df[, mod] - df$data
+    df[, paste0(mod, '_relDiff')] <- (df[, mod] * 100 / df$data) - 100
 
     # Calculate MSD and its 3 components
     # create evaluation data frame
@@ -82,8 +80,14 @@ evalMetricsCalc <- function(evalSite){
   # plot msd radarchart
   msdRadarPlot(evalSite, msd)
 
+  # plot absolute and relative difference between
+  # observations and predictions
+  diff <- diffPlot(evalSite, df, 'absDiff')
+  temp <- diffPlot(evalSite, df, 'relDiff')
+
   # plot msd and times seris of variable for all species at specific 'profound' site
   if (evalSite == 'profound'){
+    df[, c(str_which(colnames(df), "Diff"))] <- NULL
     tsPlot(evalSite, df)
     tsSpPlot(evalSite, df, site = 'kroof')
     msdSpPlot(evalSite, msd, groups, site = 'kroof')
@@ -92,8 +96,6 @@ evalMetricsCalc <- function(evalSite){
   # plot variables errors (pred-obs) = f(environmental and stand features)
   # at bauges site
   if (evalSite == 'bauges'){
-    diff <- diffPlot(evalSite, df, 'absDiff')
-    diffPlot(evalSite, df, 'relDiff')
     models <- regDiffPlot(evalSite, diff, 'absDiff')
     regDiffPlot(evalSite, diff, 'relDiff')
     return(models)

@@ -18,7 +18,6 @@ msdPlot <- function(evalSite, msd, groups){
 
   pl1 <- ggplot(data = msdDf[msdDf$devMeasure != 'MSD' & msdDf$species == 'allsp', ], aes(x = mod, y = value, fill = devMeasure)) +
     geom_bar(stat = "identity") +
-    # facet_wrap(. ~ variable, scale = "free") +
     theme_light() +
     xlab('models') +
     ylab('mean square deviation') +
@@ -134,8 +133,9 @@ obsPred <- function(evalSite, df, alldf){
       geom_point(data = obsPred[obsPred$site == site, ], aes(x = minLim, y = maxLim), alpha = 0) +
       geom_smooth(method = 'lm', formula = y ~ x) +
       geom_abline(slope = 1, intercept = 0, lwd = 1) +
-      geom_text(data = models[models$mod == 'landclim' & models$site == site,], aes(x = -Inf, y = Inf, label = paste('r2=',round(r.squared, 3))), hjust = 0, vjust = 1) +
-      geom_text(data = models[models$mod == 'salem' & models$site == site,], aes(x = Inf, y = Inf, label = paste('r2=',round(r.squared, 3))), hjust = 1, vjust = 1) +
+      geom_text(data = models[models$mod == 'landclim' & models$site == site,], aes(x = -Inf, y = Inf, label = paste('r2=',round(r.squared, 3))), hjust = 0, vjust = 1, show.legend = FALSE) +
+      geom_text(data = models[models$mod == 'salem' & models$site == site,], aes(x = Inf, y = Inf, label = paste('r2=',round(r.squared, 3))), hjust = 1, vjust = 1, show.legend = FALSE) +
+      geom_text(data = models[models$mod == '4c' & models$site == site,], aes(x = -Inf, y = -Inf, label = paste('r2=',round(r.squared, 3))), hjust = 0, vjust = -1, show.legend = FALSE) +
       facet_wrap(. ~ variable, scale = "free") +
       theme_light() +
       ylab('observations') +
@@ -143,7 +143,6 @@ obsPred <- function(evalSite, df, alldf){
       theme(aspect.ratio = 1) +
       theme
     if(evalSite == 'profound'){
-      pl1 <- pl1 + geom_text(data = models[models$mod == '4c' & models$site == site,], aes(x = -Inf, y = -Inf, label = paste('r2=',round(r.squared, 3))), hjust = 0, vjust = -1)
       ggsave(file = paste0('./plotEval/', evalSite, '/obsPred', site, '.pdf'), plot = pl1, width = 10, height = 10)
     } else if(evalSite == 'bauges'){
       ggsave(file = paste0('./plotEval/', evalSite, '/obsPred.pdf'), plot = pl1, width = 10, height = 10)
@@ -156,7 +155,11 @@ obsPred <- function(evalSite, df, alldf){
 # plot absolute and relative difference between observations and predictions
 diffPlot <- function(evalSite, df, relabsdiff){
 
-  diff <- reshape2::melt(df, id.vars = c('site', 'species', 'variable'))
+  if(evalSite == 'profound'){
+    diff <- reshape2::melt(df, id.vars = c('site', 'species', 'year', 'variable'))
+  } else if (evalSite == 'bauges'){
+    diff <- reshape2::melt(df, id.vars = c('site', 'species', 'variable'))
+  }
   colnames(diff)[ncol(diff)-1] <- 'temp'
   # diff$src <- strsplit(as.character(diff$temp), '_')[[1]][1]
   diff$mod <- str_split_fixed(diff$temp, "_", 2)[,1]
@@ -164,19 +167,35 @@ diffPlot <- function(evalSite, df, relabsdiff){
   diff[diff$diff == '', 'diff'] <- 'obsPred'
   diff$temp <- NULL
 
-  pl1 <- ggplot(data = diff[diff$sp == 'allsp' & diff$diff == relabsdiff,], aes(x =  mod, y = value)) +
-    # geom_bar(stat = "identity") +
-    geom_boxplot() +
-    facet_wrap(. ~ variable, scale = "free") +
-    theme_light() +
-    xlab('models') +
-    theme
-  if(relabsdiff == 'absDiff'){
-    pl1 <- pl1 + ylab('predictions - observations')
-  } else if(relabsdiff == 'relDiff'){
-    pl1 <- pl1 + ylab('(predictions * 100 / observations) - 100')
+  makePlotDiff <- function(site){
+    if(evalSite == 'profound'){
+      pl1 <- ggplot(data = diff[diff$sp == 'allsp' & diff$diff == relabsdiff & diff$site == site,], aes(x =  mod, y = value))
+    } else if(evalSite == 'bauges'){
+      pl1 <- ggplot(data = diff[diff$sp == 'allsp' & diff$diff == relabsdiff,], aes(x =  mod, y = value))
+    }
+    pl1 <- pl1 +
+      geom_boxplot() +
+      facet_wrap(. ~ variable, scale = "free") +
+      theme_light() +
+      xlab('models') +
+      theme
+      if(relabsdiff == 'absDiff'){
+        pl1 <- pl1 + ylab('predictions - observations')
+      } else if(relabsdiff == 'relDiff'){
+        pl1 <- pl1 + ylab('(predictions * 100 / observations) - 100')
+      }
+    if(evalSite == 'profound'){
+      ggsave(file = paste0('./plotEval/', evalSite, '/', relabsdiff, site, '.pdf'), plot = pl1, width = 10, height = 10)
+    } else if(evalSite == 'bauges'){
+      ggsave(file = paste0('./plotEval/', evalSite, '/', relabsdiff, '.pdf'), plot = pl1, width = 10, height = 10)
+    }
   }
-  ggsave(file = paste0('./plotEval/', evalSite, '/', relabsdiff, '.pdf'), plot = pl1, width = 10, height = 10)
+
+  if(evalSite == 'profound'){
+    lapply(unique(diff$site), makePlotDiff)
+  } else if(evalSite == 'bauges'){
+    makePlotDiff('useless')
+  }
 
   return(diff)
 
@@ -259,6 +278,7 @@ regDiffPlot <- function(evalSite, diff, relabsdiff){
   geom_point(alpha = 0.5) +
   geom_text(data = models[models$mod == 'landclim',], aes(x = -Inf, y = Inf, label = paste('r2=',round(r.squared, 3))), hjust = 0, vjust = 1) +
   geom_text(data = models[models$mod == 'salem',], aes(x = Inf, y = Inf, label = paste('r2=',round(r.squared, 3))), hjust = 1, vjust = 1) +
+  geom_text(data = models[models$mod == '4c',], aes(x = -Inf, y = -Inf, label = paste('r2=',round(r.squared, 3))), hjust = 0, vjust = -1) +
   facet_wrap(. ~ variable, scale = "free", strip.position = "bottom") +
   geom_smooth(method = 'lm', formula = y ~ x) +
   xlab('observations') +
