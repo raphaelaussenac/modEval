@@ -182,7 +182,7 @@ diffPlot <- function(evalSite, df, relabsdiff){
       if(relabsdiff == 'absDiff'){
         pl1 <- pl1 + ylab('predictions - observations')
       } else if(relabsdiff == 'relDiff'){
-        pl1 <- pl1 + ylab('(predictions * 100 / observations) - 100')
+        pl1 <- pl1 + ylab('relative difference (pred-obs)')
       }
     if(evalSite == 'profound'){
       ggsave(file = paste0('./plotEval/', evalSite, '/', relabsdiff, site, '.pdf'), plot = pl1, width = 10, height = 10)
@@ -223,7 +223,7 @@ regDiffPlot <- function(evalSite, diff, relabsdiff){
   if (relabsdiff == 'absDiff'){
     pl1 <- pl1 + ylab('predictions - observations')
   } else if (relabsdiff == 'relDiff'){
-    pl1 <- pl1 + ylab('(predictions * 100 / observations) - 100')
+    pl1 <- pl1 + ylab('relative difference (pred-obs)')
   }
   ggsave(file = paste0('./plotEval/', evalSite, '/reg', relabsdiff,'.pdf'), plot = pl1, width = 10, height = 10)
 
@@ -288,7 +288,7 @@ regDiffPlot <- function(evalSite, diff, relabsdiff){
   if (relabsdiff == 'absDiff'){
     pl2 <- pl2 + ylab('BAI_yr predictions - BAI_yr observations')
   } else if (relabsdiff == 'relDiff'){
-    pl2 <- pl2 + ylab('(BAI_yr predictions * 100 / BAI_yr observations) - 100')
+    pl2 <- pl2 + ylab('relative difference (pred-obs)')
   }
   ggsave(file = paste0('./plotEval/', evalSite, '/BAI', relabsdiff,'.pdf'), plot = pl2, width = 10, height = 10)
 

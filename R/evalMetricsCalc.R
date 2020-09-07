@@ -45,7 +45,8 @@ evalMetricsCalc <- function(evalSite){
     # calculate absolute and relative difference between
     # observations and predictions
     df[, paste0(mod, '_absDiff')] <- df[, mod] - df$data
-    df[, paste0(mod, '_relDiff')] <- (df[, mod] * 100 / df$data) - 100
+    df[, paste0(mod, '_relDiff')] <- ( (df[, mod] - df$data) * 100 ) / df$data
+    df[df$data < 0 & !is.na(df$data), paste0(mod, '_relDiff')] <- df[df$data < 0 & !is.na(df$data), paste0(mod, '_relDiff')] * -1
 
     # Calculate MSD and its 3 components
     # create evaluation data frame
