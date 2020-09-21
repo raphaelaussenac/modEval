@@ -8,10 +8,7 @@ rm(list = ls())
 setwd("/Users/raphael.aussenac/Documents/GitHub/modEval/data/obsAndSim/profound")
 
 # load data
-# !!!!!! first remove file local adress because of the space in the adresse which
-# is confused for a columns separation
-# second remove parentheses in columns names
-df <- read.csv("./samsara_raw/Profound_outputTreeList.txt", sep = '')
+df <- read.csv("./samsara_raw/Profound_outputTreeList.txt", sep = '\t')
 
 # change species name to comply with PROFOUND code
 spcode <- data.frame('species' = c('Picea_abies', 'Pinus_sylvestris', 'Fagus_sylvatica', 'Quercus_robur', 'Acer_platanoides', 'Larix_decidua'),
@@ -44,7 +41,7 @@ dfThin <- dfThin[dfThin$eventName != 'Evolution', ]
 df <- rbind(dfNoThin, dfThin)
 
 # keep only columns necessary for evaluation
-df <- df[, c('year', 'code', 'dbh', 'height', 'volume', 'x', 'y', 'simulation')]
+df <- df[, c('year', 'code', 'dbh..cm.', 'height..m.', 'volume..m3.', 'x..m.', 'y..m.', 'simulation')]
 colnames(df) <- c('year', 'species', 'D_cm', 'H_m', 'V_m3', 'X_utm', 'Y_utm', 'site')
 
 # separate sites and remove site name
