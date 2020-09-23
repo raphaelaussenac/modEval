@@ -30,6 +30,28 @@ msdPlot <- function(evalSite, msd, groups){
     ggsave(file = paste0('./plotEval/', evalSite, '/msd.pdf'), plot = pl1, width = 8, height = 12)
   }
 
+  # rank models based on their MSD
+  msdDf <- msdDf[msdDf$species == 'allsp' & msdDf$devMeasure == 'MSD', ]
+
+  # define variable types
+  varType <- data.frame('variable' = c('N', 'Dg', 'BA', 'H', 'BAI_yr', 'Sh', 'GS', 'GI', 'SkewD', 'Shsp', 'GSsp'),
+                        'varType' = c(rep('stockVar', 4), 'growthVar', rep('structVar', 4), rep('divVar', 2)))
+  msdDf <- merge(msdDf, varType, by = 'variable')
+
+  # rank models
+  if(evalSite == 'profound'){
+    rankGroup <- c('site', 'variable')
+  } else if(evalSite == 'bauges'){
+    rankGroup <- c('variable')
+  }
+  rankDf <- msdDf %>% group_by_at(rankGroup) %>% mutate(MSDrank = rank(value)) %>%
+                                                   group_by(mod, varType) %>%
+                                                   mutate(meanRank = mean(MSDrank)) %>%
+                                                   select(varType, mod, meanRank) %>%
+                                                   distinct() %>% arrange(varType, meanRank)
+  rankDf$evalSite <- evalSite
+  write.csv(rankDf, paste0('./plotEval/', evalSite, '/', evalSite,'Rank.csv'), row.names = FALSE)
+
 }
 
 
@@ -64,7 +86,7 @@ tsPlot <- function(evalSite, df){
   colnames(ts)[ncol(ts)-1] <- 'src'
   ts <- ts[ts$variable != 'V', ]
   # sort factor
-  ts$src <- factor(ts$src, levels = c('data', '4c', 'landclim', 'salem', 'samsara', 'sam2'))
+  ts$src <- factor(ts$src, levels = c('data', '4c', 'landclim', 'salem', 'samsara'))#, 'sam2'))
 
   pl1 <- ggplot() +
     geom_path(data = ts[!is.na(ts$value),], aes(x = year, y = value, col = src), linetype = 'dashed') +
@@ -86,7 +108,7 @@ tsSpPlot <- function(evalSite, df, site){
   spLevelVariable <- c('N', 'Dg', 'BA', 'BAI_yr')
   ts <- ts[ts$variable %in% spLevelVariable, ]
   # sort factor
-  ts$src <- factor(ts$src, levels = c('data', '4c', 'landclim', 'salem', 'samsara', 'sam2'))
+  ts$src <- factor(ts$src, levels = c('data', '4c', 'landclim', 'salem', 'samsara'))#, 'sam2'))
 
   pl1 <- ggplot() +
     geom_path(data = ts[!is.na(ts$value),], aes(x = year, y = value, col = src), linetype = 'dashed') +
@@ -137,7 +159,7 @@ obsPred <- function(evalSite, df, alldf){
       geom_text(data = models[models$mod == 'salem' & models$site == site,], aes(x = Inf, y = Inf, label = paste('r2=',round(r.squared, 3))), hjust = 1, vjust = 1, show.legend = FALSE) +
       geom_text(data = models[models$mod == '4c' & models$site == site,], aes(x = -Inf, y = -Inf, label = paste('r2=',round(r.squared, 3))), hjust = 0, vjust = -1, show.legend = FALSE) +
       geom_text(data = models[models$mod == 'samsara' & models$site == site,], aes(x = Inf, y = -Inf, label = paste('r2=',round(r.squared, 3))), hjust = 1, vjust = -1, show.legend = FALSE) +
-      geom_text(data = models[models$mod == 'sam2' & models$site == site,], aes(x = Inf, y = -Inf, label = paste('r2=',round(r.squared, 3))), hjust = 1, vjust = -2, show.legend = FALSE) +
+      # geom_text(data = models[models$mod == 'sam2' & models$site == site,], aes(x = Inf, y = -Inf, label = paste('r2=',round(r.squared, 3))), hjust = 1, vjust = -2, show.legend = FALSE) +
       facet_wrap(. ~ variable, scale = "free") +
       theme_light() +
       ylab('observations') +
@@ -282,7 +304,7 @@ regDiffPlot <- function(evalSite, diff, relabsdiff){
   geom_text(data = models[models$mod == 'salem',], aes(x = Inf, y = Inf, label = paste('r2=',round(r.squared, 3))), hjust = 1, vjust = 1, show.legend = FALSE) +
   geom_text(data = models[models$mod == '4c',], aes(x = -Inf, y = -Inf, label = paste('r2=',round(r.squared, 3))), hjust = 0, vjust = -1, show.legend = FALSE) +
   geom_text(data = models[models$mod == 'samsara',], aes(x = Inf, y = -Inf, label = paste('r2=',round(r.squared, 3))), hjust = 1, vjust = -1, show.legend = FALSE) +
-  geom_text(data = models[models$mod == 'sam2',], aes(x = Inf, y = -Inf, label = paste('r2=',round(r.squared, 3))), hjust = 1, vjust = -2, show.legend = FALSE) +
+  # geom_text(data = models[models$mod == 'sam2',], aes(x = Inf, y = -Inf, label = paste('r2=',round(r.squared, 3))), hjust = 1, vjust = -2, show.legend = FALSE) +
   facet_wrap(. ~ variable, scale = "free", strip.position = "bottom") +
   geom_smooth(method = 'lm', formula = y ~ x) +
   xlab('observations') +
@@ -327,9 +349,9 @@ msdRadarPlot <- function(evalSite, msd){
   # color vector
   # colors_border=c( rgb(0.2,0.5,0.5,0.9), rgb(0.8,0.2,0.5,0.9) , rgb(0.7,0.5,0.1,0.9) )
   # colors_in=c( rgb(0.2,0.5,0.5,0.4), rgb(0.8,0.2,0.5,0.4) , rgb(0.7,0.5,0.1,0.4) )
-  colors_border = viridis_pal(alpha = 1, option = 'viridis')(150)[c(25, 50, 75, 100, 125)]
-  colors_in = viridis_pal(alpha = 0.1, option = 'viridis')(150)[c(25, 50, 75, 100, 125)]
-  colors_in_full = viridis_pal(alpha = 1, option = 'viridis')(150)[c(25, 50, 75, 100, 125)]
+  colors_border = viridis_pal(alpha = 1, option = 'viridis')(150)[c(25, 50, 75, 100, 100)]
+  colors_in = viridis_pal(alpha = 0.2, option = 'viridis')(150)[c(25, 50, 75, 100, 100)]
+  colors_in_full = viridis_pal(alpha = 1, option = 'viridis')(150)[c(25, 50, 75, 100, 100)]
 
   # one radar plot for each site
   for (i in unique(relativeMSD$site)){
