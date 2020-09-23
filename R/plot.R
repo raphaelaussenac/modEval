@@ -64,7 +64,7 @@ tsPlot <- function(evalSite, df){
   colnames(ts)[ncol(ts)-1] <- 'src'
   ts <- ts[ts$variable != 'V', ]
   # sort factor
-  ts$src <- factor(ts$src, levels = c('data', '4c', 'landclim', 'salem', 'samsara'))
+  ts$src <- factor(ts$src, levels = c('data', '4c', 'landclim', 'salem', 'samsara', 'sam2'))
 
   pl1 <- ggplot() +
     geom_path(data = ts[!is.na(ts$value),], aes(x = year, y = value, col = src), linetype = 'dashed') +
@@ -86,7 +86,7 @@ tsSpPlot <- function(evalSite, df, site){
   spLevelVariable <- c('N', 'Dg', 'BA', 'BAI_yr')
   ts <- ts[ts$variable %in% spLevelVariable, ]
   # sort factor
-  ts$src <- factor(ts$src, levels = c('data', '4c', 'landclim', 'salem', 'samsara'))
+  ts$src <- factor(ts$src, levels = c('data', '4c', 'landclim', 'salem', 'samsara', 'sam2'))
 
   pl1 <- ggplot() +
     geom_path(data = ts[!is.na(ts$value),], aes(x = year, y = value, col = src), linetype = 'dashed') +
@@ -137,6 +137,7 @@ obsPred <- function(evalSite, df, alldf){
       geom_text(data = models[models$mod == 'salem' & models$site == site,], aes(x = Inf, y = Inf, label = paste('r2=',round(r.squared, 3))), hjust = 1, vjust = 1, show.legend = FALSE) +
       geom_text(data = models[models$mod == '4c' & models$site == site,], aes(x = -Inf, y = -Inf, label = paste('r2=',round(r.squared, 3))), hjust = 0, vjust = -1, show.legend = FALSE) +
       geom_text(data = models[models$mod == 'samsara' & models$site == site,], aes(x = Inf, y = -Inf, label = paste('r2=',round(r.squared, 3))), hjust = 1, vjust = -1, show.legend = FALSE) +
+      geom_text(data = models[models$mod == 'sam2' & models$site == site,], aes(x = Inf, y = -Inf, label = paste('r2=',round(r.squared, 3))), hjust = 1, vjust = -2, show.legend = FALSE) +
       facet_wrap(. ~ variable, scale = "free") +
       theme_light() +
       ylab('observations') +
@@ -281,6 +282,7 @@ regDiffPlot <- function(evalSite, diff, relabsdiff){
   geom_text(data = models[models$mod == 'salem',], aes(x = Inf, y = Inf, label = paste('r2=',round(r.squared, 3))), hjust = 1, vjust = 1, show.legend = FALSE) +
   geom_text(data = models[models$mod == '4c',], aes(x = -Inf, y = -Inf, label = paste('r2=',round(r.squared, 3))), hjust = 0, vjust = -1, show.legend = FALSE) +
   geom_text(data = models[models$mod == 'samsara',], aes(x = Inf, y = -Inf, label = paste('r2=',round(r.squared, 3))), hjust = 1, vjust = -1, show.legend = FALSE) +
+  geom_text(data = models[models$mod == 'sam2',], aes(x = Inf, y = -Inf, label = paste('r2=',round(r.squared, 3))), hjust = 1, vjust = -2, show.legend = FALSE) +
   facet_wrap(. ~ variable, scale = "free", strip.position = "bottom") +
   geom_smooth(method = 'lm', formula = y ~ x) +
   xlab('observations') +
@@ -325,8 +327,9 @@ msdRadarPlot <- function(evalSite, msd){
   # color vector
   # colors_border=c( rgb(0.2,0.5,0.5,0.9), rgb(0.8,0.2,0.5,0.9) , rgb(0.7,0.5,0.1,0.9) )
   # colors_in=c( rgb(0.2,0.5,0.5,0.4), rgb(0.8,0.2,0.5,0.4) , rgb(0.7,0.5,0.1,0.4) )
-  colors_border = viridis_pal(alpha = 1, option = 'viridis')(100)[c(1, 33, 66, 100)]
-  colors_in = viridis_pal(alpha = 0.5, option = 'viridis')(100)[c(1, 33, 66, 100)]
+  colors_border = viridis_pal(alpha = 1, option = 'viridis')(150)[c(25, 50, 75, 100, 125)]
+  colors_in = viridis_pal(alpha = 0.1, option = 'viridis')(150)[c(25, 50, 75, 100, 125)]
+  colors_in_full = viridis_pal(alpha = 1, option = 'viridis')(150)[c(25, 50, 75, 100, 125)]
 
   # one radar plot for each site
   for (i in unique(relativeMSD$site)){
@@ -354,7 +357,7 @@ msdRadarPlot <- function(evalSite, msd){
   }
 
 # Add a legend
-  legend(x=0.55, y=-0.58, legend = rownames(df[-c(1,2),]), bty = "n", pch=20 , col=colors_in , text.col = "black", cex=1.2, pt.cex=3)
+  legend(x=0.55, y=-0.58, legend = rownames(df[-c(1,2),]), bty = "n", pch=20 , col=colors_in_full , text.col = "black", cex=1.2, pt.cex=3)
 
 # dev.copy2pdf(file = paste0('./plotEval/radar.pdf'), width = 13, height = 5)
   dev.off()
