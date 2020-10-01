@@ -15,6 +15,12 @@ msdPlot <- function(evalSite, msd, groups){
   colnames(msdDf)[ncol(msdDf)-1] <- 'devMeasure'
   # order factor
   msdDf$devMeasure <- factor(msdDf$devMeasure, levels = c('MSD', 'LC', 'NU', 'SB'))
+  msdDf$variable <- droplevels(msdDf$variable)
+
+  # add grec symbol in labels
+  labVar <- levels(msdDf$variable)
+  labVar[labVar == 'BAI_yr'] <- "\u0394BAyr"
+  names(labVar) <- levels(msdDf$variable)
 
   pl1 <- ggplot(data = msdDf[msdDf$devMeasure != 'MSD' & msdDf$species == 'allsp', ], aes(x = mod, y = value, fill = devMeasure)) +
     geom_bar(stat = "identity") +
@@ -23,11 +29,11 @@ msdPlot <- function(evalSite, msd, groups){
     ylab('mean square deviation') +
     theme
   if(evalSite == 'bauges'){
-    pl1 <- pl1 + facet_wrap(. ~ variable, scale = "free")
-    ggsave(file = paste0('./plotEval/', evalSite, '/msd.pdf'), plot = pl1, width = 10, height = 10)
+    pl1 <- pl1 + facet_wrap(. ~ variable, scale = "free", labeller = labeller(variable = labVar))
+    ggsave(file = paste0('./plotEval/', evalSite, '/msd.pdf'), plot = pl1, width = 10, height = 10, device = cairo_pdf)
   } else if (evalSite == 'profound'){
-    pl1 <- pl1 + facet_grid(variable ~ site, scale = 'free')
-    ggsave(file = paste0('./plotEval/', evalSite, '/msd.pdf'), plot = pl1, width = 8, height = 12)
+    pl1 <- pl1 + facet_grid(variable ~ site, scale = 'free', labeller = labeller(variable = labVar))
+    ggsave(file = paste0('./plotEval/', evalSite, '/msd.pdf'), plot = pl1, width = 8, height = 12, device = cairo_pdf)
   }
 
   # rank models based on their MSD
@@ -132,6 +138,8 @@ obsPred <- function(evalSite, df, alldf){
   if(evalSite == 'bauges'){
     obsPred$site <- 'bauges'
   }
+  obsPred <- obsPred[obsPred$variable != 'V',] # remove volume variable
+  obsPred$variable <- droplevels(obsPred$variable)
 
   # add transparent points to the plot with min and max values of X and Y
   # for the coordinates of Y and X to be equal
@@ -190,6 +198,14 @@ diffPlot <- function(evalSite, df, relabsdiff){
   diff$diff <- str_split_fixed(diff$temp, "_", 2)[,2]
   diff[diff$diff == '', 'diff'] <- 'obsPred'
   diff$temp <- NULL
+  diff$variable <- droplevels(diff$variable)
+  diff <- diff[diff$variable != 'V', ] # remove volume variable
+  diff$variable <- droplevels(diff$variable)
+
+  # add grec symbol in labels
+  labVar <- levels(diff$variable)
+  labVar[labVar == 'BAI_yr'] <- "\u0394BAyr"
+  names(labVar) <- levels(diff$variable)
 
   makePlotDiff <- function(site){
     if(evalSite == 'profound'){
@@ -199,7 +215,7 @@ diffPlot <- function(evalSite, df, relabsdiff){
     }
     pl1 <- pl1 +
       geom_boxplot() +
-      facet_wrap(. ~ variable, scale = "free") +
+      facet_wrap(. ~ variable, scale = "free", labeller = labeller(variable = labVar)) +
       theme_light() +
       xlab('models') +
       theme
@@ -209,9 +225,9 @@ diffPlot <- function(evalSite, df, relabsdiff){
         pl1 <- pl1 + ylab('relative difference (pred-obs)')
       }
     if(evalSite == 'profound'){
-      ggsave(file = paste0('./plotEval/', evalSite, '/', relabsdiff, site, '.pdf'), plot = pl1, width = 10, height = 10)
+      ggsave(file = paste0('./plotEval/', evalSite, '/', relabsdiff, site, '.pdf'), plot = pl1, width = 10, height = 10, device = cairo_pdf)
     } else if(evalSite == 'bauges'){
-      ggsave(file = paste0('./plotEval/', evalSite, '/', relabsdiff, '.pdf'), plot = pl1, width = 10, height = 10)
+      ggsave(file = paste0('./plotEval/', evalSite, '/', relabsdiff, '.pdf'), plot = pl1, width = 10, height = 10, device = cairo_pdf)
     }
   }
 
@@ -297,26 +313,33 @@ regDiffPlot <- function(evalSite, diff, relabsdiff){
   models <- data.frame(models)
   # add models output to BAIdiff
   BAIdiff <- merge(BAIdiff, models[, c('variable', 'mod', 'r.squared')], by = c('variable', 'mod'), all.x = TRUE)
+  BAIdiff <- BAIdiff[!is.na(BAIdiff$obs),]
+  BAIdiff$variable <- droplevels(BAIdiff$variable)
+
+  # add grec symbol in labels
+  labVar <- levels(BAIdiff$variable)
+  labVar[labVar == 'BAI_yr'] <- "\u0394BAyr"
+  names(labVar) <- levels(BAIdiff$variable)
 
   pl2 <- ggplot(data = BAIdiff[BAIdiff$species == 'allsp',], aes(x = obs, y = DiffBAI_yr, col = mod)) +
-  geom_point(alpha = 0.5) +
+  geom_point(alpha = 0.1) +
   geom_text(data = models[models$mod == 'landclim',], aes(x = -Inf, y = Inf, label = paste('r2=',round(r.squared, 3))), hjust = 0, vjust = 1, show.legend = FALSE) +
   geom_text(data = models[models$mod == 'salem',], aes(x = Inf, y = Inf, label = paste('r2=',round(r.squared, 3))), hjust = 1, vjust = 1, show.legend = FALSE) +
   geom_text(data = models[models$mod == '4c',], aes(x = -Inf, y = -Inf, label = paste('r2=',round(r.squared, 3))), hjust = 0, vjust = -1, show.legend = FALSE) +
   geom_text(data = models[models$mod == 'samsara',], aes(x = Inf, y = -Inf, label = paste('r2=',round(r.squared, 3))), hjust = 1, vjust = -1, show.legend = FALSE) +
   # geom_text(data = models[models$mod == 'sam2',], aes(x = Inf, y = -Inf, label = paste('r2=',round(r.squared, 3))), hjust = 1, vjust = -2, show.legend = FALSE) +
-  facet_wrap(. ~ variable, scale = "free", strip.position = "bottom") +
+  facet_wrap(. ~ variable, scale = "free", strip.position = "bottom", labeller = labeller(variable = labVar)) +
   geom_smooth(method = 'lm', formula = y ~ x) +
-  xlab('observations') +
+  xlab('') +
   theme_light() +
   theme(strip.placement = "outside") +
   theme
   if (relabsdiff == 'absDiff'){
-    pl2 <- pl2 + ylab('BAI_yr predictions - BAI_yr observations')
+    pl2 <- pl2 + ylab('\u0394BAyr predictions - \u0394BAyr observations')
   } else if (relabsdiff == 'relDiff'){
-    pl2 <- pl2 + ylab('relative difference (pred-obs)')
+    pl2 <- pl2 + ylab('\u0394BAyr relative difference (pred-obs)')
   }
-  ggsave(file = paste0('./plotEval/', evalSite, '/BAI', relabsdiff,'.pdf'), plot = pl2, width = 10, height = 10)
+  ggsave(file = paste0('./plotEval/', evalSite, '/BAI', relabsdiff,'.pdf'), plot = pl2, width = 10, height = 10, device = cairo_pdf)
 
   return(models)
 
@@ -350,7 +373,7 @@ msdRadarPlot <- function(evalSite, msd){
   # colors_border=c( rgb(0.2,0.5,0.5,0.9), rgb(0.8,0.2,0.5,0.9) , rgb(0.7,0.5,0.1,0.9) )
   # colors_in=c( rgb(0.2,0.5,0.5,0.4), rgb(0.8,0.2,0.5,0.4) , rgb(0.7,0.5,0.1,0.4) )
   colors_border = viridis_pal(alpha = 1, option = 'viridis')(150)[c(25, 50, 75, 100, 100)]
-  colors_in = viridis_pal(alpha = 0.2, option = 'viridis')(150)[c(25, 50, 75, 100, 100)]
+  colors_in = viridis_pal(alpha = 0.4, option = 'viridis')(150)[c(25, 50, 75, 100, 100)]
   colors_in_full = viridis_pal(alpha = 1, option = 'viridis')(150)[c(25, 50, 75, 100, 100)]
 
   # one radar plot for each site
