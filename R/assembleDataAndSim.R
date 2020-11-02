@@ -20,7 +20,7 @@ dataAndSim <- function(evalSite){
           if(grepl(pattern = s, x = fileNames[i])){site <- s}
         }
         temp <- cbind(site, temp)
-        temp$weight <- 1
+        if(src != 'salem'){temp$weight <- 1}
       }
       temp$src <- src
       alldf <- rbind(alldf, temp)
